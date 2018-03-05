@@ -1,16 +1,17 @@
 package pn150121d.kdp.stockmarket.common;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import sun.misc.BASE64Decoder;
+
+import java.io.*;
 import java.net.Socket;
+import java.util.Base64;
 
 public class SocketWrapper
 {
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
+    private boolean open=true;
 
     public SocketWrapper(String ip, int port) throws IOException
     {
@@ -27,6 +28,7 @@ public class SocketWrapper
     {
         writer.println(data);
     }
+
     public String read() throws IOException
     {
         String data= reader.readLine();
@@ -35,8 +37,19 @@ public class SocketWrapper
     }
     public void close() throws IOException
     {
-        writer.close();
-        reader.close();
-        socket.close();
+        if(open)
+        {
+            open=false;
+            writer.close();
+            reader.close();
+            socket.close();
+        }
+    }
+    public String getIp()
+    {
+        String ip = socket.getRemoteSocketAddress().toString();
+        ip=ip.substring(1);
+        ip=ip.split(":")[0];
+        return ip;
     }
 }

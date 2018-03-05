@@ -1,19 +1,22 @@
 package pn150121d.kdp.stockmarket.client;
-import pn150121d.kdp.stockmarket.common.SocketWrapper;
+import pn150121d.kdp.stockmarket.common.*;
 
-import java.io.BufferedReader;
+import javax.swing.*;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class Main
 {
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args) throws IOException, ClassNotFoundException
     {
-        BufferedReader i = new BufferedReader(new InputStreamReader(System.in));
-        String msg=i.readLine();
-        SocketWrapper sock=new SocketWrapper("localhost", 6666);
-        sock.write(msg);
-        System.out.println(sock.read());
-        sock.close();
+        SwingUtilities.invokeLater(() -> {
+            UI ui=new UI();
+            ui.setupUI();
+        });
+
+    }
+
+    private static void testTransaction(String user, TransactionType type, int item, int count, int price, int listenPort) throws IOException
+    {
+
     }
 }

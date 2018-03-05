@@ -1,21 +1,51 @@
 package pn150121d.kdp.stockmarket.master;
 
-import pn150121d.kdp.stockmarket.common.SocketWrapper;
+import pn150121d.kdp.stockmarket.common.Ports;
+import pn150121d.kdp.stockmarket.common.Server;
 
+import javax.swing.*;
 import java.io.IOException;
-import java.net.ServerSocket;
 
 public class Main
 {
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args) throws IOException, InterruptedException
     {
-        ServerSocket srv=new ServerSocket(6666);
-        while(true)
+        boolean useGui=false;
+        int port=Ports.MASTER_LISTEN_PORT;
+        for(String arg:args)
         {
-            SocketWrapper wrp = new SocketWrapper(srv.accept());
-            System.out.println("OOO: "+wrp.read());
-            wrp.write("QQQ");
-            wrp.close();
+            if(arg.startsWith("port="))
+            {
+                port=Integer.parseInt(arg.substring(5));
+            }
+            else if(arg.equals("ui"))
+            {
+                useGui=true;
+            }
+        }
+        try
+        {
+            Server server= new Server(port, new RequestHandler());
+
+            Thread serverThread = new Thread(server);
+            if(useGui)
+            {
+                SwingUtilities.invokeLater(() -> {
+                    UI ui=new UI(server);
+                    ui.setupUI();
+                });
+            }
+            else
+            {
+                server.setLogger(message -> System.out.println("MASTER LOG: "+message));
+            }
+            serverThread.start();
+            serverThread.join();
+        }
+        catch (IOException err)
+        {
+            System.out.println("Failed to start server");
+            System.out.println(err.getMessage());
         }
 
     }
