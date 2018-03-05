@@ -51,14 +51,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             }
             finally
             {
-                try
-                {
-                    request.close();
-                }
-                catch (IOException ignored)
-                {
-
-                }
+                request.close();
             }
         }
 
@@ -80,8 +73,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
         {
             Transaction trans = req.trans;
             server.log("Handling revoke: " + trans.toString());
-            if (TransactionStorage.revoke(trans)) request.write("OK");
-            else request.write("FAIL");
+            request.write(Base64.objectTo64(TransactionStorage.revoke(trans)));
             server.notifyUpdate();
         }
     }

@@ -3,6 +3,7 @@ package pn150121d.kdp.stockmarket.master;
 import pn150121d.kdp.stockmarket.common.*;
 
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -53,6 +54,8 @@ class UI extends JPanel implements Logger, UpdateListener
         this.add(top, BorderLayout.NORTH);
 
         log=new JTextArea();
+        DefaultCaret caret = (DefaultCaret)log.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
         log.setEditable(false);
         log.setLineWrap(true);
         clients=new JTextArea();

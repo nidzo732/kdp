@@ -67,9 +67,11 @@ class TransactionStorage
         return null;
     }
 
-    static boolean revoke(Transaction trans)
+    static RevokeTransactionResponse revoke(Transaction trans)
     {
         lock.writeLock().lock();
+        String status="NOT_FOUND";
+        String transId=null;
         try
         {
             HashMap<Integer, List<Transaction>> targetMap = null;
@@ -83,9 +85,18 @@ class TransactionStorage
                 {
                     if (t.id.equals(trans.id))
                     {
-                        if (t.sender.equals(trans.sender) && t.timeStamp + TimeConstants.MIN_AGE_BEFORE_REVOKE < (new Date().getTime()))
+                        if (t.sender.equals(trans.sender))
                         {
-                            target = t;
+                            if(t.timeStamp+TimeConstants.MIN_AGE_BEFORE_REVOKE*1000>=(new Date().getTime()))
+                            {
+                                status="TOO_SOON";
+                            }
+                            else
+                            {
+                                status="OK";
+                                target = t;
+                                transId=target.id;
+                            }
                         }
                         break;
                     }
@@ -93,10 +104,9 @@ class TransactionStorage
                 if (target != null)
                 {
                     transactions.remove(target);
-                    return true;
                 }
             }
-            return false;
+            return new RevokeTransactionResponse(trans.sender, status, transId);
         }
         finally
         {
@@ -112,7 +122,7 @@ class TransactionStorage
             if (recurse && purchases.containsKey(trans.item))
             {
                 List<Transaction> purchasesList = purchases.get(trans.item);
-                TransactionSuccess response = new TransactionSuccess(trans.sender, trans.type, trans.item, 0);
+                TransactionSuccess response = new TransactionSuccess(trans.sender, trans.type, trans.item, 0, trans.id);
                 List<TransactionSuccess> successes = new LinkedList<>();
                 while (purchasesList.size() > 0 && purchasesList.get(0).price >= trans.price && trans.count > 0)
                 {
@@ -120,14 +130,14 @@ class TransactionStorage
                     if (offer.count <= trans.count)
                     {
                         purchasesList.remove(0);
-                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, offer.count));
+                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, offer.count, offer.id));
                         trans.count -= offer.count;
                         response.count += offer.count;
                     }
                     else
                     {
                         offer.count -= trans.count;
-                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, trans.count));
+                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, trans.count, offer.id));
                         response.count += trans.count;
                         trans.count = 0;
                     }
@@ -163,7 +173,7 @@ class TransactionStorage
             if (recurse && sales.containsKey(trans.item))
             {
                 List<Transaction> salesList = sales.get(trans.item);
-                TransactionSuccess response = new TransactionSuccess(trans.sender, trans.type, trans.item, 0);
+                TransactionSuccess response = new TransactionSuccess(trans.sender, trans.type, trans.item, 0, trans.id);
                 List<TransactionSuccess> successes = new LinkedList<>();
                 while (salesList.size() > 0 && salesList.get(0).price <= trans.price && trans.count > 0)
                 {
@@ -171,14 +181,14 @@ class TransactionStorage
                     if (offer.count <= trans.count)
                     {
                         salesList.remove(0);
-                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, offer.count));
+                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, offer.count, offer.id));
                         trans.count -= offer.count;
                         response.count += offer.count;
                     }
                     else
                     {
                         offer.count -= trans.count;
-                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, trans.count));
+                        successes.add(new TransactionSuccess(offer.sender, offer.type, offer.item, trans.count, offer.id));
                         response.count += trans.count;
                         trans.count = 0;
                     }

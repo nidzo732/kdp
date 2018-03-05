@@ -1,13 +1,12 @@
 package pn150121d.kdp.stockmarket.common;
 
-import sun.misc.BASE64Decoder;
-
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Base64;
 
 public class SocketWrapper
 {
+    public static final int TIMEOUT = 2000;
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
@@ -15,12 +14,17 @@ public class SocketWrapper
 
     public SocketWrapper(String ip, int port) throws IOException
     {
-        this(new Socket(ip, port));
+        socket=new Socket();
+        socket.setSoTimeout(TIMEOUT);
+        socket.connect(new InetSocketAddress(ip, port), TIMEOUT);
+        reader=new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        writer=new PrintWriter(socket.getOutputStream(), true);
     }
 
     public SocketWrapper(Socket socket) throws IOException
     {
         this.socket=socket;
+        this.socket.setSoTimeout(TIMEOUT);
         reader=new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer=new PrintWriter(socket.getOutputStream(), true);
     }
@@ -35,14 +39,21 @@ public class SocketWrapper
         if(data==null) throw new IOException();
         return data;
     }
-    public void close() throws IOException
+    public void close()
     {
         if(open)
         {
-            open=false;
-            writer.close();
-            reader.close();
-            socket.close();
+            try
+            {
+                open = false;
+                writer.close();
+                reader.close();
+                socket.close();
+            }
+            catch (IOException ignored)
+            {
+
+            }
         }
     }
     public String getIp()

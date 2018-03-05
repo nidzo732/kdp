@@ -6,13 +6,12 @@ import pn150121d.kdp.stockmarket.common.SlaveRegistrationRequest;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class Router
 {
-    static ReadWriteLock lock=new ReentrantReadWriteLock();
+    static ReadWriteLock lock=new ReentrantReadWriteLock(true);
     static HashMap<String, Client> clients=new HashMap<>();
     static HashMap<Integer, Slave> slaves=new HashMap<>();
     static Iterator<Slave> slavesIterator=null;

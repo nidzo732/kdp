@@ -2,7 +2,6 @@ package pn150121d.kdp.stockmarket.client;
 
 import pn150121d.kdp.stockmarket.common.*;
 
-import javax.annotation.Resource;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -14,17 +13,19 @@ import java.io.IOException;
 public class UI extends JPanel implements Logger, UpdateListener, ActionListener
 {
     private Server server;
+    private Master master;
     private final String SEPARATOR="\n________________________________________________\n";
     private JFrame frame;
     private static final int WINDOW_WIDTH = 1200;
     private static final int WINDOW_HEIGHT = 400;
     private JTextArea transactions;
     private JTextArea prices;
-    private JTextArea log;
+    private JList<String> log;
     private JButton loginButton;
     private JTextField username;
     private JTextField password;
     private JTextField port;
+    private JTextField masterIp;
     private JTextField item;
     private JTextField price;
     private JTextField count;
@@ -63,19 +64,22 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         setLayout(new BorderLayout());
         topGrid=new GridLayout(3,1);
         top=new JPanel(topGrid);
-        topRow1=new JPanel(new GridLayout(2,4, 10, 0));
+        topRow1=new JPanel(new GridLayout(2,5, 10, 0));
         topRow1.add(new JLabel("Ime"));
         topRow1.add(new JLabel("Lozinka"));
         topRow1.add(new JLabel("Port"));
+        topRow1.add(new JLabel("server"));
         topRow1.add(new JLabel(""));
         username=new JTextField();
         password=new JTextField();
         port=new JTextField(Integer.toString(Ports.CLIENT_LISTEN_PORT));
+        masterIp=new JTextField("localhost");
         loginButton=new JButton("Prijava");
         loginButton.addActionListener(this);
         topRow1.add(username);
         topRow1.add(password);
         topRow1.add(port);
+        topRow1.add(masterIp);
         topRow1.add(loginButton);
 
         item=new JTextField();
@@ -92,7 +96,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         transactionButtons.add(buy);
         transactionButtons.add(sell);
         transactionButtons.add(revoke);
-        topRow2.add(new JLabel("Hartija"));
+        topRow2.add(new JLabel("Hartija/ID transakcije"));
         topRow2.add(new JLabel("Cena"));
         topRow2.add(new JLabel("Količina"));
         topRow2.add(new JLabel(""));
@@ -113,9 +117,9 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         top.add(topRow3);
         this.add(top, BorderLayout.NORTH);
 
-        log=new JTextArea();
-        log.setEditable(false);
-        log.setLineWrap(true);
+        JScrollPane sp=new JScrollPane();
+        log=new JList<>(new DefaultListModel<>());
+        sp.setViewportView(log);
         transactions=new JTextArea();
         transactions.setEditable(false);
         prices=new JTextArea();
@@ -123,12 +127,10 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         JPanel mid=new JPanel(new GridLayout(1,3,10,0));
         mid.add(transactions);
         mid.add(prices);
-        mid.add(log);
+        mid.add(sp);
         this.add(mid, BorderLayout.CENTER);
 
-        /*server.setLogger(this);
-        server.setUpdateListener(this);
-        dataUpdated();*/
+        dataUpdated();
         frame.setResizable(false);
         buy.setEnabled(false);
         sell.setEnabled(false);
@@ -138,12 +140,19 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     @Override
     public void logMessage(String message)
     {
-        log.append(message+SEPARATOR);
+        ((DefaultListModel<String>)(log.getModel())).addElement(message);
     }
 
     @Override
     public void dataUpdated()
     {
+        TransactionsAndPrices.getReadLock();
+        transactions.setText("");
+        for(Transaction t: TransactionsAndPrices.transactions.values())
+        {
+            transactions.append(t.id+":"+t.type+":"+t.count+SEPARATOR);
+        }
+        TransactionsAndPrices.releaseReadLock();
         /*TransactionStorage.getReadLock();
         sales.setText("");
         for(Transaction t:TransactionStorage.getAllTransactions(TransactionType.SALE))
@@ -194,31 +203,23 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             }
             server = new Server(port, new RequestHandler());
             new Thread(server).start();
-            SocketWrapper sock = new SocketWrapper("localhost", Ports.MASTER_LISTEN_PORT);
-            sock.write(Base64.objectTo64(new RegistrationRequest(port, username, password)));
-            String response = sock.read();
-            if(response.equals("OK"))
-            {
-                logMessage("Prijava uspesna");
-                loginButton.setVisible(false);
-                topRow1.setVisible(false);
-                topGrid.setRows(2);
-                top.remove(topRow1);
-                buy.setEnabled(true);
-                sell.setEnabled(true);
-                revoke.setEnabled(true);
-            }
-            else
-            {
-                logMessage("Greska pri prijavi");
-                logMessage(response);
-            }
-            sock.close();
+            master=new Master(masterIp.getText(), Ports.MASTER_LISTEN_PORT, port, username, password);
+            logMessage("Prijava uspesna");
+            loginButton.setVisible(false);
+            topRow1.setVisible(false);
+            topGrid.setRows(2);
+            top.remove(topRow1);
+            buy.setEnabled(true);
+            sell.setEnabled(true);
+            revoke.setEnabled(true);
+            server.setLogger(this);
+            server.setUpdateListener(this);
         }
         catch (IOException err)
         {
             logMessage("Greska pri prijavi");
             logMessage(err.getMessage());
+            if(server!=null) server.kill();
         }
     }
     private void doTrans(TransactionType type)
@@ -231,8 +232,8 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             try
             {
                 item = Integer.parseInt(this.item.getText());
-                price = Integer.parseInt(this.item.getText());
-                count = Integer.parseInt(this.item.getText());
+                price = Integer.parseInt(this.price.getText());
+                count = Integer.parseInt(this.count.getText());
                 if(price<=0 || count<=0)
                 {
                     JOptionPane.showMessageDialog(null, "Cena i broj moraju biti pozitivni brojevi");
@@ -244,24 +245,55 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                 JOptionPane.showMessageDialog(null, "Unesite brojčane podatke");
                 return;
             }
-            SocketWrapper sock = new SocketWrapper("localhost", Ports.MASTER_LISTEN_PORT);
-            sock.write(Base64.objectTo64(new Transaction(username.getText(), type, item, price, count)));
-            String response = sock.read();
-            if(response.equals("OK") || response.equals("NO_SLAVES"))
+            try
             {
-                logMessage(response);
+                TransactionsAndPrices.getReadLock();
+                Transaction trans=new Transaction(master.username, type, item, price, count);
+                String response = master.sendMessage(trans);
+                if(response.equals("NO_SLAVES"))
+                {
+                    logMessage("Nema dostupnih podservera");
+                    return;
+                }
+                trans.id=response;
+                TransactionsAndPrices.transactions.put(trans.id, trans);
+                logMessage("Transakcija uspešno poslata, ID: "+trans.id);
+                dataUpdated();
             }
-            else
+            finally
             {
-                TransactionSuccess success=Base64.objectFrom64(response);
-                logMessage("OK: "+success.count);
+                TransactionsAndPrices.releaseReadLock();
             }
         }
-        catch (IOException | ClassNotFoundException err)
+        catch (IOException err)
         {
             logMessage(err.getMessage());
         }
-
+    }
+    public void revokeTransaction()
+    {
+        String transId=item.getText();
+        try
+        {
+            TransactionsAndPrices.getReadLock();
+            Transaction trans=null;
+            if(TransactionsAndPrices.transactions.containsKey(transId))
+            {
+                trans=TransactionsAndPrices.transactions.get(transId);
+            }
+            TransactionsAndPrices.releaseReadLock();
+            if(trans==null)
+            {
+                logMessage("Ne postoji izabrana transakcija");
+                return;
+            }
+            String response = master.sendMessage(new RevokeTransactionRequest(trans));
+            logMessage("Zahtev za opoziv poslat");
+        }
+        catch (IOException err)
+        {
+            logMessage(err.getMessage());
+        }
     }
     @Override
     public void actionPerformed(ActionEvent e)
@@ -277,6 +309,10 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         else if(e.getActionCommand().equals("Prodaj"))
         {
             doTrans(TransactionType.SALE);
+        }
+        else if(e.getActionCommand().equals("Opozovi"))
+        {
+            revokeTransaction();
         }
     }
 }

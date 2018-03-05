@@ -1,6 +1,7 @@
 package pn150121d.kdp.stockmarket.master;
 
 import pn150121d.kdp.stockmarket.common.Base64;
+import pn150121d.kdp.stockmarket.common.Echo;
 import pn150121d.kdp.stockmarket.common.NetworkMessage;
 import pn150121d.kdp.stockmarket.common.SocketWrapper;
 
@@ -44,14 +45,25 @@ public class Correspondent
         }
         finally
         {
-            try
-            {
-                if(sock!=null) sock.close();
-            }
-            catch (IOException ignored)
-            {
-
-            }
+            if(sock!=null) sock.close();
+        }
+    }
+    public boolean ping()
+    {
+        SocketWrapper sock=null;
+        try
+        {
+            sock = new SocketWrapper(ip, port);
+            sock.write(Base64.objectTo64(new Echo()));
+            return "ECHO".equals(sock.read());
+        }
+        catch(IOException err)
+        {
+            return false;
+        }
+        finally
+        {
+            if(sock!=null) sock.close();
         }
     }
 }

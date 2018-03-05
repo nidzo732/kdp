@@ -4,10 +4,14 @@ import pn150121d.kdp.stockmarket.common.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
+    private static int nextTransId=0;
+    private static synchronized int getNextTransactionId()
+    {
+        return nextTransId++;
+    }
     @Override
     public void handleRequest(SocketWrapper request, Server server)
     {
@@ -18,19 +22,30 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
     {
         private final SocketWrapper request;
         private final Server server;
+        private final NetworkMessage predefinedMessage;
 
         Handler(SocketWrapper request, Server server)
         {
             this.request = request;
             this.server = server;
+            this.predefinedMessage=null;
         }
+        Handler(NetworkMessage predefinedMessage, Server server)
+        {
+            this.request=null;
+            this.server=server;
+            this.predefinedMessage=predefinedMessage;
+        }
+
 
         @Override
         public void run()
         {
             try
             {
-                NetworkMessage message = Base64.objectFrom64(request.read());
+                NetworkMessage message = null;
+                if(predefinedMessage!=null) message=predefinedMessage;
+                else message=Base64.objectFrom64(request.read());
                 switch (message.getType())
                 {
                     case MessageTypes.PROCESS_TRANSACTION:
@@ -45,7 +60,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                     case MessageTypes.REVOKE_TRANSACTION:
                         revokeTransaction((RevokeTransactionRequest) message);
                     case MessageTypes.ECHO:
-                        request.write("ECHO");
+                        respond("ECHO");
                         break;
                     default:
                         server.log("Got unknown request type: " + message);
@@ -61,59 +76,56 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             }
             finally
             {
-                try
-                {
-                    request.close();
-                }
-                catch (IOException ignored)
-                {
-
-                }
+                if(request!=null) request.close();
             }
         }
 
         private void processTransaction(Transaction trans) throws IOException, ClassNotFoundException
         {
-            if(!Router.clients.containsKey(trans.sender))
+            if (!Router.clients.containsKey(trans.sender))
             {
                 server.log("Got transaction from unknown client");
+                respond("REJECT");
                 return;
             }
-            trans.id = UUID.randomUUID().toString();
+            Client client = Router.clients.get(trans.sender);
+            if(request!=null)
+            {
+                if (!client.ip.equals(request.getIp()))
+                {
+                    server.log("Got transaction from fake client");
+                    request.write("REJECT");
+                    return;
+                }
+            }
+            trans.id = Integer.toString(getNextTransactionId());
             String response = Router.routeMessageToSlave(trans, trans.item);
             if (response != null)
             {
                 if(response.equals("NO_SLAVES"))
                 {
-                    request.write(response);
+                    respond(response);
                     return;
+                }
+                else
+                {
+                    respond(trans.id);
                 }
                 List<TransactionSuccess> statuses = Base64.objectFrom64(response);
                 if(statuses.size()>0)
                 {
                     for (TransactionSuccess status : statuses)
                     {
-                        if (status.target.equals(trans.sender))
-                        {
-                            request.write(Base64.objectTo64(status));
-                        }
-                        else
-                        {
-                            Client client = Router.clients.get(status.target);
-                            client.send(status);
-                        }
+                        Client cl = Router.clients.get(status.target);
+                        cl.send(status);
                     }
-                }
-                else
-                {
-                    request.write("OK");
                 }
                 server.notifyUpdate();
             }
             else
             {
                 server.notifyUpdate();
-                request.write("OK");
+                respond(trans.id);
             }
         }
 
@@ -149,18 +161,37 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             }
         }
 
-        private void revokeTransaction(RevokeTransactionRequest req)
+        private void revokeTransaction(RevokeTransactionRequest req) throws IOException, ClassNotFoundException
         {
-            if(!Router.clients.containsKey(req.trans.sender))
+            if (!Router.clients.containsKey(req.trans.sender))
             {
                 server.log("Got transaction from unknown client");
                 return;
             }
+            Client client = Router.clients.get(req.trans.sender);
+            if(request!=null)
+            {
+                if (!client.ip.equals(request.getIp()))
+                {
+                    server.log("Got transaction from fake client");
+                    request.write("REJECT");
+                    return;
+                }
+            }
+            respond("OK");
             String response = Router.routeMessageToSlave(req, req.trans.item);
+            NetworkMessage responseObject = Base64.objectFrom64(response);
             if (response != null)
             {
-                request.write(response);
+                client.send(responseObject);
                 server.notifyUpdate();
+            }
+        }
+        private void respond(String message)
+        {
+            if(request!=null)
+            {
+                request.write(message);
             }
         }
     }
