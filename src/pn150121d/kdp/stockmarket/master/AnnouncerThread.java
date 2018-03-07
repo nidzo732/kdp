@@ -3,20 +3,20 @@ package pn150121d.kdp.stockmarket.master;
 import pn150121d.kdp.stockmarket.common.*;
 import java.util.*;
 
-public class AnnouncerThread extends Thread
+class AnnouncerThread extends Thread
 {
     private boolean running=true;
     private UpdateListener updateListener;
     private Logger logger;
     private final CollectorThread collector;
 
-    public AnnouncerThread(CollectorThread collector)
+    AnnouncerThread(CollectorThread collector)
     {
         this.collector = collector;
     }
 
 
-    public void halt()
+    void halt()
     {
         running=false;
         interrupt();
@@ -71,12 +71,12 @@ public class AnnouncerThread extends Thread
         }
     }
 
-    public void setUpdateListener(UpdateListener updateListener)
+    void setUpdateListener(UpdateListener updateListener)
     {
         this.updateListener = updateListener;
     }
 
-    public void setLogger(Logger logger)
+    void setLogger(Logger logger)
     {
         this.logger = logger;
     }

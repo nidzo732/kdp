@@ -43,6 +43,7 @@ class UI extends JPanel implements Logger, UpdateListener
             {
                 server.kill();
                 collectorThread.halt();
+                announcerThread.halt();
                 frame.dispose();
             }
         });

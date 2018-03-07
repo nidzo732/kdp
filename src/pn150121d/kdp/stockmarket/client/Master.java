@@ -7,19 +7,19 @@ import pn150121d.kdp.stockmarket.common.SocketWrapper;
 
 import java.io.IOException;
 
-public class Master
+class Master
 {
-    public final String username;
+    final String username;
     public final int port;
-    public final String password;
+    // private final String password;
     private final String ip;
 
-    public Master(String ip, int port, int myPort, String username, String password) throws IOException
+    Master(String ip, int port, int myPort, String username, String password) throws IOException
     {
         this.ip = ip;
         this.port = port;
         this.username = username;
-        this.password = password;
+        // this.password = password;
         SocketWrapper sock = null;
         try
         {
@@ -34,7 +34,7 @@ public class Master
         }
     }
 
-    public String sendMessage(NetworkMessage message) throws IOException
+    String sendMessage(NetworkMessage message) throws IOException
     {
         SocketWrapper sock = null;
         try

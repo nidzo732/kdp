@@ -55,7 +55,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
         {
             try
             {
-                NetworkMessage message = null;
+                NetworkMessage message;
                 if (predefinedMessage != null) message = predefinedMessage;
                 else message = Base64.objectFrom64(request.read());
                 switch (message.getType())

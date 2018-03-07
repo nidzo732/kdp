@@ -178,10 +178,10 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     {
         try
         {
-            String username = null;
-            String password = null;
-            String portText = null;
-            int port = 0;
+            String username;
+            String password;
+            String portText;
+            int port;
             try
             {
                 username = this.username.getText();
@@ -230,9 +230,9 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     {
         try
         {
-            String item = "";
-            int price = 0;
-            int count = 0;
+            String item;
+            int price;
+            int count;
             try
             {
                 item = this.item.getText();

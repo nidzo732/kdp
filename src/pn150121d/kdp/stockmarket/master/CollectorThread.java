@@ -6,7 +6,7 @@ import pn150121d.kdp.stockmarket.common.Base64;
 import java.io.IOException;
 import java.util.*;
 
-public class CollectorThread extends Thread
+class CollectorThread extends Thread
 {
     private Map<String, Integer> prices= Collections.synchronizedMap(new HashMap<>());
     private boolean running=true;
@@ -15,12 +15,12 @@ public class CollectorThread extends Thread
     private Logger logger;
     private Server server;
 
-    public CollectorThread(Server server)
+    CollectorThread(Server server)
     {
         this.server=server;
     }
 
-    public void halt()
+    void halt()
     {
         running=false;
         interrupt();
@@ -82,29 +82,28 @@ public class CollectorThread extends Thread
         {
             try
             {
-                List<Price> receivedPrices = (List<Price>) Base64.objectFrom64(response);
+                List<Price> receivedPrices = Base64.objectFrom64(response);
                 for(Price price:receivedPrices)
                 {
                     prices.put(price.item, price.price);
                 }
             }
-            catch (IOException | ClassNotFoundException | ClassCastException e)
+            catch (IOException | ClassNotFoundException | ClassCastException ignored)
             {
-                return;
             }
         }
     }
-    public Integer getPrice(String item)
+    Integer getPrice(String item)
     {
         return prices.getOrDefault(item, null);
     }
 
-    public void setUpdateListener(UpdateListener updateListener)
+    void setUpdateListener(UpdateListener updateListener)
     {
         this.updateListener = updateListener;
     }
 
-    public void setLogger(Logger logger)
+    void setLogger(Logger logger)
     {
         this.logger = logger;
     }
@@ -112,7 +111,7 @@ public class CollectorThread extends Thread
     {
         if(logger!=null) logger.logMessage(message);
     }
-    public Map<String, Integer> getPrices()
+    Map<String, Integer> getPrices()
     {
         return new HashMap<>(prices);
     }

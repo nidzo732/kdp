@@ -1,7 +1,6 @@
 package pn150121d.kdp.stockmarket.client;
 
 import pn150121d.kdp.stockmarket.common.SocketWrapper;
-import pn150121d.kdp.stockmarket.common.TransactionType;
 
 import javax.swing.*;
 import java.io.IOException;
