@@ -1,5 +1,7 @@
 package pn150121d.kdp.stockmarket.client;
-import pn150121d.kdp.stockmarket.common.*;
+
+import pn150121d.kdp.stockmarket.common.SocketWrapper;
+import pn150121d.kdp.stockmarket.common.TransactionType;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -8,15 +10,11 @@ public class Main
 {
     public static void main(String[] args) throws IOException, ClassNotFoundException
     {
+        SocketWrapper.TIMEOUT=4000;
         SwingUtilities.invokeLater(() -> {
-            UI ui=new UI();
+            UI ui = new UI();
             ui.setupUI();
         });
-
-    }
-
-    private static void testTransaction(String user, TransactionType type, int item, int count, int price, int listenPort) throws IOException
-    {
 
     }
 }

@@ -6,6 +6,12 @@ import java.io.IOException;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
+    @Override
+    public void handleRequest(SocketWrapper request, Server server)
+    {
+        new Thread(new Handler(request, server)).start();
+    }
+
     private class Handler implements Runnable
     {
         private final SocketWrapper request;
@@ -29,13 +35,17 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                         request.write("ECHO");
                         break;
                     case MessageTypes.TRANSACTION_SUCCESS:
-                        TransactionsAndPrices.handleSuccess((TransactionSuccess)message);
+                        TransactionsAndPrices.handleSuccess((TransactionSuccess) message);
                         request.write("ACK");
-                        server.log("Transaction success: "+((TransactionSuccess)message).transId);
+                        server.log("Transaction success: " + ((TransactionSuccess) message).transId);
                         server.notifyUpdate();
                         break;
                     case MessageTypes.REVOKE_TRANSACTION_RESPONSE:
-                        server.log(TransactionsAndPrices.handleRevoke((RevokeTransactionResponse)message));
+                        server.log(TransactionsAndPrices.handleRevoke((RevokeTransactionResponse) message));
+                        server.notifyUpdate();
+                        break;
+                    case MessageTypes.ANNOUNCE_PRICES:
+                        TransactionsAndPrices.prices=((PriceAnnounce)message).priceList;
                         server.notifyUpdate();
                         break;
                     default:
@@ -55,10 +65,5 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 request.close();
             }
         }
-    }
-    @Override
-    public void handleRequest(SocketWrapper request, Server server)
-    {
-        new Thread(new Handler(request, server)).start();
     }
 }

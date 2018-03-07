@@ -8,10 +8,22 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class TransactionStorage
 {
+    private static class PriceDescriptor
+    {
+        private PriceDescriptor()
+        {
+            lastTransaction=-1;
+            lastPrice=-1;
+        }
+        int lastTransaction;
+        int lastPrice;
+    }
     private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
-    private static HashMap<Integer, List<Transaction>> sales = new HashMap<>();
-    private static HashMap<Integer, List<Transaction>> purchases = new HashMap<>();
-    private static HashMap<Integer, Integer> prices = new HashMap<>();
+    private static HashMap<String, List<Transaction>> sales = new HashMap<>();
+    private static HashMap<String, List<Transaction>> purchases = new HashMap<>();
+    private static HashMap<String, PriceDescriptor> prices = new HashMap<>();
+    private static final HashMap<String, ReadWriteLock> handledTransactionsLocks=new HashMap<>();
+    private static final HashMap<String, List<TransactionSuccess>> handledTransactions=new HashMap<>();
 
     static void getReadLock()
     {
@@ -30,9 +42,9 @@ class TransactionStorage
         try
         {
             List<Price> result = new LinkedList<>();
-            for (Integer item : prices.keySet())
+            for (String item : prices.keySet())
             {
-                result.add(new Price(item, prices.get(item)));
+                result.add(new Price(item, getPrice(item)));
             }
             return result;
         }
@@ -45,7 +57,7 @@ class TransactionStorage
     static List<Transaction> getAllTransactions(TransactionType type)
     {
         List<Transaction> result = new LinkedList<>();
-        HashMap<Integer, List<Transaction>> target = null;
+        HashMap<String, List<Transaction>> target;
         if (type == TransactionType.SALE) target = sales;
         else target = purchases;
         for (List<Transaction> l : target.values())
@@ -57,24 +69,42 @@ class TransactionStorage
 
     static List<TransactionSuccess> process(Transaction trans)
     {
+        synchronized (handledTransactionsLocks)
+        {
+            if(handledTransactionsLocks.containsKey(trans.id))
+            {
+                handledTransactionsLocks.get(trans.id).readLock().lock();
+                return handledTransactions.get(trans.id);
+            }
+            else
+            {
+                handledTransactionsLocks.put(trans.id, new ReentrantReadWriteLock(true));
+                handledTransactionsLocks.get(trans.id).writeLock().lock();
+            }
+        }
+        List<TransactionSuccess> result=null;
         switch (trans.type)
         {
             case SALE:
-                return sell(trans, true);
+                result = sell(trans, true);
+                break;
             case PURCHASE:
-                return purchase(trans, true);
+                result = purchase(trans, true);
+                break;
         }
-        return null;
+        handledTransactions.put(trans.id, result);
+        handledTransactionsLocks.get(trans.id).writeLock().unlock();
+        return result;
     }
 
     static RevokeTransactionResponse revoke(Transaction trans)
     {
         lock.writeLock().lock();
-        String status="NOT_FOUND";
-        String transId=null;
+        String status = "NOT_FOUND";
+        String transId = null;
         try
         {
-            HashMap<Integer, List<Transaction>> targetMap = null;
+            HashMap<String, List<Transaction>> targetMap;
             if (trans.type == TransactionType.SALE) targetMap = sales;
             else targetMap = purchases;
             if (targetMap.containsKey(trans.item))
@@ -87,15 +117,15 @@ class TransactionStorage
                     {
                         if (t.sender.equals(trans.sender))
                         {
-                            if(t.timeStamp+TimeConstants.MIN_AGE_BEFORE_REVOKE*1000>=(new Date().getTime()))
+                            if (t.timeStamp + TimeConstants.MIN_AGE_BEFORE_REVOKE * 1000 >= (new Date().getTime()))
                             {
-                                status="TOO_SOON";
+                                status = "TOO_SOON";
                             }
                             else
                             {
-                                status="OK";
+                                status = "OK";
                                 target = t;
-                                transId=target.id;
+                                transId = target.id;
                             }
                         }
                         break;
@@ -119,6 +149,7 @@ class TransactionStorage
         lock.writeLock().lock();
         try
         {
+            if(!prices.containsKey(trans.item)) prices.put(trans.item, new PriceDescriptor());
             if (recurse && purchases.containsKey(trans.item))
             {
                 List<Transaction> purchasesList = purchases.get(trans.item);
@@ -141,7 +172,7 @@ class TransactionStorage
                         response.count += trans.count;
                         trans.count = 0;
                     }
-                    prices.put(trans.item, trans.price);
+                    updatePriceFromTransaction(trans.item, trans.price);
                 }
                 if (response.count > 0) successes.add(response);
                 if (trans.count > 0) sell(trans, false);
@@ -170,6 +201,7 @@ class TransactionStorage
         lock.writeLock().lock();
         try
         {
+            if(!prices.containsKey(trans.item)) prices.put(trans.item, new PriceDescriptor());
             if (recurse && sales.containsKey(trans.item))
             {
                 List<Transaction> salesList = sales.get(trans.item);
@@ -192,7 +224,7 @@ class TransactionStorage
                         response.count += trans.count;
                         trans.count = 0;
                     }
-                    prices.put(trans.item, offer.price);
+                    updatePriceFromTransaction(trans.item, trans.price);
                 }
                 if (response.count > 0) successes.add(response);
                 if (trans.count > 0) purchase(trans, false);
@@ -214,5 +246,43 @@ class TransactionStorage
         {
             lock.writeLock().unlock();
         }
+    }
+    private static void updatePriceFromTransaction(String item, int price)
+    {
+        PriceDescriptor descriptor;
+        if(prices.containsKey(item))
+        {
+            descriptor=prices.get(item);
+        }
+        else
+        {
+            descriptor=new PriceDescriptor();
+            prices.put(item, descriptor);
+        }
+        descriptor.lastTransaction=price;
+        descriptor.lastPrice=price;
+    }
+    private static Integer getPrice(String item)
+    {
+        PriceDescriptor descriptor=prices.getOrDefault(item, null);
+        if(descriptor!=null && descriptor.lastTransaction>=0)
+        {
+            int price=descriptor.lastTransaction;
+            descriptor.lastTransaction=-1;
+            return price;
+        }
+        else if(sales.containsKey(item) && sales.get(item).size()>0)
+        {
+            return sales.get(item).get(0).price;
+        }
+        else if(purchases.containsKey(item) && purchases.get(item).size()>0)
+        {
+            return purchases.get(item).get(0).price;
+        }
+        else if(descriptor!=null && descriptor.lastPrice>=0)
+        {
+            return descriptor.lastPrice;
+        }
+        return null;
     }
 }

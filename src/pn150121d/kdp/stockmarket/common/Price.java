@@ -5,11 +5,12 @@ import java.io.Serializable;
 public class Price implements Serializable
 {
     static final long serialVersionUID = 34589340958340958L;
-    public final int item;
-    public final int price;
-    public Price(int item, int price)
+    public final String item;
+    public final Integer price;
+
+    public Price(String item, Integer price)
     {
-        this.item=item;
-        this.price=price;
+        this.item = item;
+        this.price = price;
     }
 }

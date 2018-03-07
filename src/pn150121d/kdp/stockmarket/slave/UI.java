@@ -9,19 +9,20 @@ import java.awt.event.WindowEvent;
 
 class UI extends JPanel implements Logger, UpdateListener
 {
-    private final Server server;
-    private final String SEPARATOR="\n________________________________________________\n";
-    private JFrame frame;
     private static final int WINDOW_WIDTH = 1200;
     private static final int WINDOW_HEIGHT = 400;
-    private JTextArea sales;
-    private JTextArea purchases;
-    private JTextArea prices;
-    private JTextArea log;
+    private final Server server;
+    private JFrame frame;
+    private ScrollableTextList sales;
+    private ScrollableTextList purchases;
+    private ScrollableTextList prices;
+    private ScrollableTextList log;
+
     UI(Server server)
     {
-        this.server=server;
+        this.server = server;
     }
+
     void setupUI()
     {
         frame = new JFrame("Podserver");
@@ -41,7 +42,7 @@ class UI extends JPanel implements Logger, UpdateListener
         frame.setVisible(true);
 
         setLayout(new BorderLayout());
-        JPanel top=new JPanel(new GridLayout(2,4, 10, 0));
+        JPanel top = new JPanel(new GridLayout(2, 4, 10, 0));
         top.add(new JLabel("Prodaje"));
         top.add(new JLabel("Kupovine"));
         top.add(new JLabel("Cene"));
@@ -52,16 +53,11 @@ class UI extends JPanel implements Logger, UpdateListener
         top.add(new JLabel(""));
         this.add(top, BorderLayout.NORTH);
 
-        log=new JTextArea();
-        log.setEditable(false);
-        log.setLineWrap(true);
-        sales=new JTextArea();
-        sales.setEditable(false);
-        purchases=new JTextArea();
-        purchases.setEditable(false);
-        prices=new JTextArea();
-        prices.setEditable(false);
-        JPanel mid=new JPanel(new GridLayout(1,4, 10,0));
+        log = new ScrollableTextList();
+        sales = new ScrollableTextList();
+        purchases = new ScrollableTextList();
+        prices = new ScrollableTextList();
+        JPanel mid = new JPanel(new GridLayout(1, 4, 10, 0));
         mid.add(sales);
         mid.add(purchases);
         mid.add(prices);
@@ -77,27 +73,27 @@ class UI extends JPanel implements Logger, UpdateListener
     @Override
     public void logMessage(String message)
     {
-        log.append(message+SEPARATOR);
+        log.append(message);
     }
 
     @Override
     public void dataUpdated()
     {
         TransactionStorage.getReadLock();
-        sales.setText("");
-        for(Transaction t:TransactionStorage.getAllTransactions(TransactionType.SALE))
+        sales.clear();
+        for (Transaction t : TransactionStorage.getAllTransactions(TransactionType.SALE))
         {
-            sales.append(t.toShortString()+SEPARATOR);
+            sales.append(t.toShortString());
         }
-        purchases.setText("");
-        for(Transaction t:TransactionStorage.getAllTransactions(TransactionType.PURCHASE))
+        purchases.clear();
+        for (Transaction t : TransactionStorage.getAllTransactions(TransactionType.PURCHASE))
         {
-            purchases.append(t.toShortString()+SEPARATOR);
+            purchases.append(t.toShortString());
         }
-        prices.setText("");
-        for(Price price:TransactionStorage.getPrices())
+        prices.clear();
+        for (Price price : TransactionStorage.getPrices())
         {
-            prices.append(price.item+":"+price.price+SEPARATOR);
+            prices.append(price.item + ":" + price.price);
         }
         TransactionStorage.releaseReadLock();
     }

@@ -7,15 +7,26 @@ import java.util.List;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
-    private static int nextTransId=0;
+    private static int nextTransId = 0;
+
     private static synchronized int getNextTransactionId()
     {
         return nextTransId++;
     }
+
     @Override
     public void handleRequest(SocketWrapper request, Server server)
     {
         new Thread(new Handler(request, server)).start();
+    }
+
+    @Override
+    public void handleDelayedRequests(List<NetworkMessage> requests, Server server)
+    {
+        for(NetworkMessage request:requests)
+        {
+            new Thread(new Handler(request, server)).start();
+        }
     }
 
     private static class Handler implements Runnable
@@ -28,13 +39,14 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
         {
             this.request = request;
             this.server = server;
-            this.predefinedMessage=null;
+            this.predefinedMessage = null;
         }
+
         Handler(NetworkMessage predefinedMessage, Server server)
         {
-            this.request=null;
-            this.server=server;
-            this.predefinedMessage=predefinedMessage;
+            this.request = null;
+            this.server = server;
+            this.predefinedMessage = predefinedMessage;
         }
 
 
@@ -44,8 +56,8 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             try
             {
                 NetworkMessage message = null;
-                if(predefinedMessage!=null) message=predefinedMessage;
-                else message=Base64.objectFrom64(request.read());
+                if (predefinedMessage != null) message = predefinedMessage;
+                else message = Base64.objectFrom64(request.read());
                 switch (message.getType())
                 {
                     case MessageTypes.PROCESS_TRANSACTION:
@@ -76,7 +88,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             }
             finally
             {
-                if(request!=null) request.close();
+                if (request != null) request.close();
             }
         }
 
@@ -89,7 +101,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 return;
             }
             Client client = Router.clients.get(trans.sender);
-            if(request!=null)
+            if (request != null)
             {
                 if (!client.ip.equals(request.getIp()))
                 {
@@ -98,11 +110,11 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                     return;
                 }
             }
-            trans.id = Integer.toString(getNextTransactionId());
+            if(request!=null) trans.id = Integer.toString(getNextTransactionId());
             String response = Router.routeMessageToSlave(trans, trans.item);
             if (response != null)
             {
-                if(response.equals("NO_SLAVES"))
+                if (response.equals("NO_SLAVES"))
                 {
                     respond(response);
                     return;
@@ -112,7 +124,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                     respond(trans.id);
                 }
                 List<TransactionSuccess> statuses = Base64.objectFrom64(response);
-                if(statuses.size()>0)
+                if (statuses.size() > 0)
                 {
                     for (TransactionSuccess status : statuses)
                     {
@@ -169,7 +181,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 return;
             }
             Client client = Router.clients.get(req.trans.sender);
-            if(request!=null)
+            if (request != null)
             {
                 if (!client.ip.equals(request.getIp()))
                 {
@@ -187,9 +199,10 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 server.notifyUpdate();
             }
         }
+
         private void respond(String message)
         {
-            if(request!=null)
+            if (request != null)
             {
                 request.write(message);
             }

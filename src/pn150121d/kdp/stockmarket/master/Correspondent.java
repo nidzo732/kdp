@@ -13,26 +13,28 @@ public class Correspondent
 {
     final String ip;
     final int port;
-    private List<NetworkMessage> backlog;
-    public Correspondent(String ip, int port)
+    List<NetworkMessage> backlog;
+
+    Correspondent(String ip, int port)
     {
-        this.ip=ip;
-        this.port=port;
-        backlog=new LinkedList<>();
+        this.ip = ip;
+        this.port = port;
+        backlog = new LinkedList<>();
     }
 
-    public synchronized String send(NetworkMessage message)
+    synchronized String send(NetworkMessage message)
     {
         String response = sendMessage(message);
-        if(response==null)
+        if (response == null)
         {
             backlog.add(message);
         }
         return response;
     }
+
     private String sendMessage(NetworkMessage message)
     {
-        SocketWrapper sock=null;
+        SocketWrapper sock = null;
         try
         {
             sock = new SocketWrapper(ip, port);
@@ -45,25 +47,33 @@ public class Correspondent
         }
         finally
         {
-            if(sock!=null) sock.close();
+            if (sock != null) sock.close();
         }
     }
+
     public boolean ping()
     {
-        SocketWrapper sock=null;
+        SocketWrapper sock = null;
         try
         {
             sock = new SocketWrapper(ip, port);
             sock.write(Base64.objectTo64(new Echo()));
             return "ECHO".equals(sock.read());
         }
-        catch(IOException err)
+        catch (IOException err)
         {
             return false;
         }
         finally
         {
-            if(sock!=null) sock.close();
+            if (sock != null) sock.close();
         }
+    }
+
+    synchronized List<NetworkMessage> swapBacklogs()
+    {
+        List<NetworkMessage> backlogs=new LinkedList<>(backlog);
+        backlog.clear();
+        return backlogs;
     }
 }

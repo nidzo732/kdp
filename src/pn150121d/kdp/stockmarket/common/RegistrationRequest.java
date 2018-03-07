@@ -9,10 +9,11 @@ public class RegistrationRequest implements NetworkMessage
 
     public RegistrationRequest(int port, String name, String password)
     {
-        this.port=port;
-        this.name=name;
-        this.password=password;
+        this.port = port;
+        this.name = name;
+        this.password = password;
     }
+
     @Override
     public String getType()
     {

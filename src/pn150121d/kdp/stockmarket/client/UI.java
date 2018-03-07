@@ -12,15 +12,14 @@ import java.io.IOException;
 
 public class UI extends JPanel implements Logger, UpdateListener, ActionListener
 {
+    private static final int WINDOW_WIDTH = 900;
+    private static final int WINDOW_HEIGHT = 400;
     private Server server;
     private Master master;
-    private final String SEPARATOR="\n________________________________________________\n";
     private JFrame frame;
-    private static final int WINDOW_WIDTH = 1200;
-    private static final int WINDOW_HEIGHT = 400;
-    private JTextArea transactions;
-    private JTextArea prices;
-    private JList<String> log;
+    private ScrollableTextList transactions;
+    private ScrollableTextList prices;
+    private ScrollableTextList log;
     private JButton loginButton;
     private JTextField username;
     private JTextField password;
@@ -39,10 +38,12 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     private JPanel topRow3;
 
     private GridLayout topGrid;
+
     UI()
     {
 
     }
+
     void setupUI()
     {
         frame = new JFrame("Klijent");
@@ -54,7 +55,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             @Override
             public void windowClosing(WindowEvent e)
             {
-                if(server!=null) server.kill();
+                if (server != null) server.kill();
                 frame.dispose();
             }
         });
@@ -62,19 +63,19 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         frame.setVisible(true);
 
         setLayout(new BorderLayout());
-        topGrid=new GridLayout(3,1);
-        top=new JPanel(topGrid);
-        topRow1=new JPanel(new GridLayout(2,5, 10, 0));
+        topGrid = new GridLayout(3, 1);
+        top = new JPanel(topGrid);
+        topRow1 = new JPanel(new GridLayout(2, 5, 10, 0));
         topRow1.add(new JLabel("Ime"));
         topRow1.add(new JLabel("Lozinka"));
         topRow1.add(new JLabel("Port"));
         topRow1.add(new JLabel("server"));
         topRow1.add(new JLabel(""));
-        username=new JTextField();
-        password=new JTextField();
-        port=new JTextField(Integer.toString(Ports.CLIENT_LISTEN_PORT));
-        masterIp=new JTextField("localhost");
-        loginButton=new JButton("Prijava");
+        username = new JTextField();
+        password = new JTextField();
+        port = new JTextField(Integer.toString(Ports.CLIENT_LISTEN_PORT));
+        masterIp = new JTextField("localhost");
+        loginButton = new JButton("Prijava");
         loginButton.addActionListener(this);
         topRow1.add(username);
         topRow1.add(password);
@@ -82,17 +83,17 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         topRow1.add(masterIp);
         topRow1.add(loginButton);
 
-        item=new JTextField();
-        price=new JTextField();
-        count=new JTextField();
-        buy=new JButton("Kupi");
-        sell=new JButton("Prodaj");
-        revoke=new JButton("Opozovi");
+        item = new JTextField();
+        price = new JTextField();
+        count = new JTextField();
+        buy = new JButton("Kupi");
+        sell = new JButton("Prodaj");
+        revoke = new JButton("Opozovi");
         buy.addActionListener(this);
         sell.addActionListener(this);
         revoke.addActionListener(this);
-        topRow2=new JPanel(new GridLayout(2, 4, 10, 0));
-        JPanel transactionButtons=new JPanel(new FlowLayout());
+        topRow2 = new JPanel(new GridLayout(2, 4, 1, 0));
+        JPanel transactionButtons = new JPanel(new GridLayout(1, 3,1,0));
         transactionButtons.add(buy);
         transactionButtons.add(sell);
         transactionButtons.add(revoke);
@@ -105,11 +106,11 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         topRow2.add(count);
         topRow2.add(transactionButtons);
 
-        topRow3=new JPanel(new GridLayout(2, 3,10,0));
+        topRow3 = new JPanel(new GridLayout(2, 3, 10, 0));
         topRow3.add(new JLabel("Transakcije"));
         topRow3.add(new JLabel("Cene"));
         topRow3.add(new JLabel("Log"));
-        topRow3.add(new JLabel("Posijlalac:Hartija:Cena:Broj"));
+        topRow3.add(new JLabel("ID:hartija:Tip:Cena:Broj"));
         topRow3.add(new JLabel("Hartija:cena"));
         topRow3.add(new JLabel(""));
         top.add(topRow1);
@@ -117,17 +118,13 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         top.add(topRow3);
         this.add(top, BorderLayout.NORTH);
 
-        JScrollPane sp=new JScrollPane();
-        log=new JList<>(new DefaultListModel<>());
-        sp.setViewportView(log);
-        transactions=new JTextArea();
-        transactions.setEditable(false);
-        prices=new JTextArea();
-        prices.setEditable(false);
-        JPanel mid=new JPanel(new GridLayout(1,3,10,0));
+        log = new ScrollableTextList();
+        transactions = new ScrollableTextList();
+        prices = new ScrollableTextList();
+        JPanel mid = new JPanel(new GridLayout(1, 3, 10, 0));
         mid.add(transactions);
         mid.add(prices);
-        mid.add(sp);
+        mid.add(log);
         this.add(mid, BorderLayout.CENTER);
 
         dataUpdated();
@@ -140,17 +137,22 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     @Override
     public void logMessage(String message)
     {
-        ((DefaultListModel<String>)(log.getModel())).addElement(message);
+        log.append(message);
     }
 
     @Override
     public void dataUpdated()
     {
         TransactionsAndPrices.getReadLock();
-        transactions.setText("");
-        for(Transaction t: TransactionsAndPrices.transactions.values())
+        transactions.clear();
+        for (Transaction t : TransactionsAndPrices.transactions.values())
         {
-            transactions.append(t.id+":"+t.type+":"+t.count+SEPARATOR);
+            transactions.append(t.id + ":"+t.item+":"+t.type + ":"+t.price+":"+ t.count);
+        }
+        prices.clear();
+        for(Price price:TransactionsAndPrices.prices)
+        {
+            prices.append(price.item+":"+price.price);
         }
         TransactionsAndPrices.releaseReadLock();
         /*TransactionStorage.getReadLock();
@@ -171,14 +173,15 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         }
         TransactionStorage.releaseReadLock();*/
     }
+
     private void doLogin()
     {
         try
         {
-            String username=null;
-            String password=null;
-            String portText=null;
-            int port=0;
+            String username = null;
+            String password = null;
+            String portText = null;
+            int port = 0;
             try
             {
                 username = this.username.getText();
@@ -190,7 +193,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                     return;
                 }
                 port = Integer.parseInt(portText);
-                if(port<=1024 || port>=65535)
+                if (port <= 1024 || port >= 65535)
                 {
                     JOptionPane.showMessageDialog(null, "Port mora biti broj u opsegu [1025, 65535)");
                     return;
@@ -203,7 +206,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             }
             server = new Server(port, new RequestHandler());
             new Thread(server).start();
-            master=new Master(masterIp.getText(), Ports.MASTER_LISTEN_PORT, port, username, password);
+            master = new Master(masterIp.getText(), Ports.MASTER_LISTEN_PORT, port, username, password);
             logMessage("Prijava uspesna");
             loginButton.setVisible(false);
             topRow1.setVisible(false);
@@ -219,22 +222,28 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         {
             logMessage("Greska pri prijavi");
             logMessage(err.getMessage());
-            if(server!=null) server.kill();
+            if (server != null) server.kill();
         }
     }
+
     private void doTrans(TransactionType type)
     {
         try
         {
-            int item=0;
-            int price=0;
-            int count=0;
+            String item = "";
+            int price = 0;
+            int count = 0;
             try
             {
-                item = Integer.parseInt(this.item.getText());
+                item = this.item.getText();
+                if(item.length()==0)
+                {
+                    JOptionPane.showMessageDialog(null, "Unesite naziv hartije");
+                    return;
+                }
                 price = Integer.parseInt(this.price.getText());
                 count = Integer.parseInt(this.count.getText());
-                if(price<=0 || count<=0)
+                if (price <= 0 || count <= 0)
                 {
                     JOptionPane.showMessageDialog(null, "Cena i broj moraju biti pozitivni brojevi");
                     return;
@@ -248,16 +257,16 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             try
             {
                 TransactionsAndPrices.getReadLock();
-                Transaction trans=new Transaction(master.username, type, item, price, count);
+                Transaction trans = new Transaction(master.username, type, item, price, count);
                 String response = master.sendMessage(trans);
-                if(response.equals("NO_SLAVES"))
+                if (response.equals("NO_SLAVES"))
                 {
                     logMessage("Nema dostupnih podservera");
                     return;
                 }
-                trans.id=response;
+                trans.id = response;
                 TransactionsAndPrices.transactions.put(trans.id, trans);
-                logMessage("Transakcija uspešno poslata, ID: "+trans.id);
+                logMessage("Transakcija uspešno poslata, ID: " + trans.id);
                 dataUpdated();
             }
             finally
@@ -270,24 +279,25 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             logMessage(err.getMessage());
         }
     }
-    public void revokeTransaction()
+
+    private void revokeTransaction()
     {
-        String transId=item.getText();
+        String transId = item.getText();
         try
         {
             TransactionsAndPrices.getReadLock();
-            Transaction trans=null;
-            if(TransactionsAndPrices.transactions.containsKey(transId))
+            Transaction trans = null;
+            if (TransactionsAndPrices.transactions.containsKey(transId))
             {
-                trans=TransactionsAndPrices.transactions.get(transId);
+                trans = TransactionsAndPrices.transactions.get(transId);
             }
             TransactionsAndPrices.releaseReadLock();
-            if(trans==null)
+            if (trans == null)
             {
                 logMessage("Ne postoji izabrana transakcija");
                 return;
             }
-            String response = master.sendMessage(new RevokeTransactionRequest(trans));
+            master.sendMessage(new RevokeTransactionRequest(trans));
             logMessage("Zahtev za opoziv poslat");
         }
         catch (IOException err)
@@ -295,6 +305,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             logMessage(err.getMessage());
         }
     }
+
     @Override
     public void actionPerformed(ActionEvent e)
     {
@@ -302,15 +313,15 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         {
             doLogin();
         }
-        else if(e.getActionCommand().equals("Kupi"))
+        else if (e.getActionCommand().equals("Kupi"))
         {
             doTrans(TransactionType.PURCHASE);
         }
-        else if(e.getActionCommand().equals("Prodaj"))
+        else if (e.getActionCommand().equals("Prodaj"))
         {
             doTrans(TransactionType.SALE);
         }
-        else if(e.getActionCommand().equals("Opozovi"))
+        else if (e.getActionCommand().equals("Opozovi"))
         {
             revokeTransaction();
         }

@@ -10,9 +10,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class TransactionsAndPrices
 {
-    private static ReadWriteLock lock=new ReentrantReadWriteLock(true);
-    static HashMap<String, Transaction> transactions=new HashMap<>();
+    static HashMap<String, Transaction> transactions = new HashMap<>();
     static List<Price> prices = new LinkedList<>();
+    private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     static void getReadLock()
     {
@@ -30,15 +30,17 @@ public class TransactionsAndPrices
         transactions.put(transaction.id, transaction);
         lock.writeLock().unlock();
     }
+
     static void handleSuccess(TransactionSuccess success)
     {
         lock.writeLock().lock();
-        if(!transactions.containsKey(success.transId)) return;
-        Transaction trans=transactions.get(success.transId);
-        trans.count-=success.count;
-        if(trans.count==0) transactions.remove(success.transId);
+        if (!transactions.containsKey(success.transId)) return;
+        Transaction trans = transactions.get(success.transId);
+        trans.count -= success.count;
+        if (trans.count == 0) transactions.remove(success.transId);
         lock.writeLock().unlock();
     }
+
     static String handleRevoke(RevokeTransactionResponse response)
     {
 

@@ -10,36 +10,39 @@ public class Main
 {
     public static void main(String[] args) throws IOException, InterruptedException
     {
-        boolean useGui=false;
-        int port=Ports.MASTER_LISTEN_PORT;
-        for(String arg:args)
+        boolean useGui = false;
+        int port = Ports.MASTER_LISTEN_PORT;
+        for (String arg : args)
         {
-            if(arg.startsWith("port="))
+            if (arg.startsWith("port="))
             {
-                port=Integer.parseInt(arg.substring(5));
+                port = Integer.parseInt(arg.substring(5));
             }
-            else if(arg.equals("ui"))
+            else if (arg.equals("ui"))
             {
-                useGui=true;
+                useGui = true;
             }
         }
         try
         {
-            Server server= new Server(port, new RequestHandler());
-
+            Server server = new Server(port, new RequestHandler());
             Thread serverThread = new Thread(server);
-            if(useGui)
+            CollectorThread collectorThread=new CollectorThread(server);
+            AnnouncerThread announcerThread=new AnnouncerThread(collectorThread);
+            if (useGui)
             {
                 SwingUtilities.invokeLater(() -> {
-                    UI ui=new UI(server);
+                    UI ui = new UI(server, collectorThread, announcerThread);
                     ui.setupUI();
                 });
             }
             else
             {
-                server.setLogger(message -> System.out.println("MASTER LOG: "+message));
+                server.setLogger(message -> System.out.println("MASTER LOG: " + message));
             }
             serverThread.start();
+            collectorThread.start();
+            announcerThread.start();
             serverThread.join();
         }
         catch (IOException err)

@@ -7,6 +7,12 @@ import java.io.Serializable;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
+    @Override
+    public void handleRequest(SocketWrapper request, Server server)
+    {
+        new Thread(new Handler(request, server)).start();
+    }
+
     private static class Handler implements Runnable
     {
         private final SocketWrapper request;
@@ -76,10 +82,5 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             request.write(Base64.objectTo64(TransactionStorage.revoke(trans)));
             server.notifyUpdate();
         }
-    }
-    @Override
-    public void handleRequest(SocketWrapper request, Server server)
-    {
-        new Thread(new Handler(request, server)).start();
     }
 }

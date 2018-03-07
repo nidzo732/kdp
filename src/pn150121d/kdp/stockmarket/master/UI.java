@@ -1,28 +1,35 @@
 package pn150121d.kdp.stockmarket.master;
 
-import pn150121d.kdp.stockmarket.common.*;
+import pn150121d.kdp.stockmarket.common.Logger;
+import pn150121d.kdp.stockmarket.common.ScrollableTextList;
+import pn150121d.kdp.stockmarket.common.Server;
+import pn150121d.kdp.stockmarket.common.UpdateListener;
 
 import javax.swing.*;
-import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 class UI extends JPanel implements Logger, UpdateListener
 {
-    private final Server server;
-    private final String SEPARATOR="\n________________________________________________\n";
-    private JFrame frame;
     private static final int WINDOW_WIDTH = 1200;
     private static final int WINDOW_HEIGHT = 400;
-    private JTextArea clients;
-    private JTextArea slaves;
-    private JTextArea items;
-    private JTextArea log;
-    UI(Server server)
+    private final Server server;
+    private JFrame frame;
+    private ScrollableTextList clients;
+    private ScrollableTextList slaves;
+    private ScrollableTextList items;
+    private ScrollableTextList log;
+    private CollectorThread collectorThread;
+    private AnnouncerThread announcerThread;
+
+    UI(Server server, CollectorThread collectorThread, AnnouncerThread announcerThread)
     {
-        this.server=server;
+        this.server = server;
+        this.collectorThread=collectorThread;
+        this.announcerThread=announcerThread;
     }
+
     void setupUI()
     {
         frame = new JFrame("Server");
@@ -35,6 +42,7 @@ class UI extends JPanel implements Logger, UpdateListener
             public void windowClosing(WindowEvent e)
             {
                 server.kill();
+                collectorThread.halt();
                 frame.dispose();
             }
         });
@@ -42,29 +50,22 @@ class UI extends JPanel implements Logger, UpdateListener
         frame.setVisible(true);
 
         setLayout(new BorderLayout());
-        JPanel top=new JPanel(new GridLayout(2,4, 10, 0));
+        JPanel top = new JPanel(new GridLayout(2, 4, 10, 0));
         top.add(new JLabel("Klijenti"));
         top.add(new JLabel("Podserveri"));
         top.add(new JLabel("Hartije"));
         top.add(new JLabel("Log"));
         top.add(new JLabel("naziv:ip:port"));
         top.add(new JLabel("ip:port"));
-        top.add(new JLabel("hartija:nadlezni podserver"));
+        top.add(new JLabel("hartija:nadlezni podserver:cena"));
         top.add(new JLabel(""));
         this.add(top, BorderLayout.NORTH);
 
-        log=new JTextArea();
-        DefaultCaret caret = (DefaultCaret)log.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        log.setEditable(false);
-        log.setLineWrap(true);
-        clients=new JTextArea();
-        clients.setEditable(false);
-        slaves=new JTextArea();
-        slaves.setEditable(false);
-        items=new JTextArea();
-        items.setEditable(false);
-        JPanel mid=new JPanel(new GridLayout(1,4, 10,0));
+        log = new ScrollableTextList();
+        clients = new ScrollableTextList();
+        slaves = new ScrollableTextList();
+        items = new ScrollableTextList();
+        JPanel mid = new JPanel(new GridLayout(1, 4, 10, 0));
         mid.add(clients);
         mid.add(slaves);
         mid.add(items);
@@ -73,6 +74,10 @@ class UI extends JPanel implements Logger, UpdateListener
 
         server.setLogger(this);
         server.setUpdateListener(this);
+        collectorThread.setLogger(this);
+        collectorThread.setUpdateListener(this);
+        announcerThread.setLogger(this);
+        announcerThread.setUpdateListener(this);
         frame.setResizable(false);
         dataUpdated();
     }
@@ -80,27 +85,27 @@ class UI extends JPanel implements Logger, UpdateListener
     @Override
     public void logMessage(String message)
     {
-        log.append(message+SEPARATOR);
+        log.append(message);
     }
 
     @Override
-    public void dataUpdated()
+    public synchronized void dataUpdated()
     {
         Router.getReadLock();
-        slaves.setText("");
-        for(Slave slave:Router.slaves.values())
+        slaves.clear();
+        for (Slave slave : Router.slaves.values())
         {
-            slaves.append(slave.ip+":"+slave.port+SEPARATOR);
+            slaves.append(slave.ip + ":" + slave.port);
         }
-        clients.setText("");
-        for(Client client:Router.clients.values())
+        clients.clear();
+        for (Client client : Router.clients.values())
         {
-            clients.append(client.name+":"+client.ip+":"+client.port+SEPARATOR);
+            clients.append(client.name + ":" + client.ip + ":" + client.port);
         }
-        items.setText("");
-        for(Integer item:Router.slaveTransMap.keySet())
+        items.clear();
+        for (String item : Router.slaveTransMap.keySet())
         {
-            items.append(item+":"+Router.slaveTransMap.get(item)+SEPARATOR);
+            items.append(item + ":" + Router.slaveTransMap.get(item)+":"+collectorThread.getPrice(item));
         }
         Router.releaseReadLock();
     }

@@ -2,21 +2,27 @@ package pn150121d.kdp.stockmarket.common;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.List;
 
 public class Server implements Runnable
 {
     private ServerSocket listener;
     private int listenPort;
-    private Logger logger=null;
-    private UpdateListener updateListener=null;
+    private Logger logger = null;
+    private UpdateListener updateListener = null;
     private RequestHandler handler;
-    private boolean terminated=false;
+    private boolean terminated = false;
 
     public Server(int listenPort, RequestHandler handler) throws IOException
     {
-        this.listenPort=listenPort;
-        this.handler=handler;
+        this.listenPort = listenPort;
+        this.handler = handler;
         listener = new ServerSocket(listenPort);
+    }
+
+    public void handleDelayedRequests(List<NetworkMessage> requests)
+    {
+        handler.handleDelayedRequests(requests, this);
     }
 
     @Override
@@ -32,7 +38,7 @@ public class Server implements Runnable
         }
         catch (IOException err)
         {
-            if(!terminated)
+            if (!terminated)
             {
                 System.out.println("IOException in slave");
                 System.out.println(err.getMessage());
@@ -41,7 +47,7 @@ public class Server implements Runnable
         }
         finally
         {
-            if(listener!=null && !listener.isClosed())
+            if (listener != null && !listener.isClosed())
             {
                 try
                 {
@@ -56,11 +62,12 @@ public class Server implements Runnable
 
     public void notifyUpdate()
     {
-        if(updateListener!=null) updateListener.dataUpdated();
+        if (updateListener != null) updateListener.dataUpdated();
     }
+
     public void log(String message)
     {
-        if(logger!=null) logger.logMessage(message);
+        if (logger != null) logger.logMessage(message);
     }
 
     public void setLogger(Logger logger)
@@ -72,9 +79,10 @@ public class Server implements Runnable
     {
         this.updateListener = updateListener;
     }
+
     public void kill()
     {
-        terminated=true;
+        terminated = true;
         try
         {
             listener.close();

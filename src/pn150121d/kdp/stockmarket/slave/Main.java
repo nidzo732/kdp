@@ -9,36 +9,36 @@ public class Main
 {
     public static void main(String[] args) throws InterruptedException, IOException
     {
-        boolean useGui=false;
-        int port=Ports.SLAVE_LISTEN_PORT;
-        String masterIp="localhost";
-        int masterPort=Ports.MASTER_LISTEN_PORT;
-        for(String arg:args)
+        boolean useGui = false;
+        int port = Ports.SLAVE_LISTEN_PORT;
+        String masterIp = "localhost";
+        int masterPort = Ports.MASTER_LISTEN_PORT;
+        for (String arg : args)
         {
-            if(arg.startsWith("port="))
+            if (arg.startsWith("port="))
             {
-                port=Integer.parseInt(arg.substring(5));
+                port = Integer.parseInt(arg.substring(5));
             }
             else if (arg.startsWith("masterip="))
             {
-                masterIp=arg.substring(9);
+                masterIp = arg.substring(9);
             }
-            else if(arg.startsWith("masterport="))
+            else if (arg.startsWith("masterport="))
             {
-                masterPort=Integer.parseInt(arg.substring(11));
+                masterPort = Integer.parseInt(arg.substring(11));
             }
-            else if(arg.equals("ui"))
+            else if (arg.equals("ui"))
             {
-                useGui=true;
+                useGui = true;
             }
         }
-        SocketWrapper serverConnection=null;
+        SocketWrapper serverConnection = null;
         try
         {
-            serverConnection=new SocketWrapper(masterIp, masterPort);
+            serverConnection = new SocketWrapper(masterIp, masterPort);
             serverConnection.write(Base64.objectTo64(new SlaveRegistrationRequest(port)));
-            String response=serverConnection.read();
-            if(!response.equals("OK"))
+            String response = serverConnection.read();
+            if (!response.equals("OK"))
             {
                 System.out.println("Master refused connection");
                 System.out.println(response);
@@ -53,20 +53,20 @@ public class Main
         }
         finally
         {
-            if(serverConnection!=null) serverConnection.close();
+            if (serverConnection != null) serverConnection.close();
         }
-        Server server= new Server(port, new RequestHandler());
+        Server server = new Server(port, new RequestHandler());
         Thread serverThread = new Thread(server);
-        if(useGui)
+        if (useGui)
         {
             SwingUtilities.invokeLater(() -> {
-                UI ui=new UI(server);
+                UI ui = new UI(server);
                 ui.setupUI();
             });
         }
         else
         {
-            server.setLogger(message -> System.out.println("SLAVE LOG: "+message));
+            server.setLogger(message -> System.out.println("SLAVE LOG: " + message));
         }
         serverThread.start();
         serverThread.join();
