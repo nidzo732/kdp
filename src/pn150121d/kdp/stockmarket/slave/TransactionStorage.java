@@ -17,6 +17,12 @@ class TransactionStorage
         }
         int lastTransaction;
         int lastPrice;
+
+        @Override
+        public String toString()
+        {
+            return "{lT:"+lastTransaction+", lP:"+lastPrice+"}";
+        }
     }
     private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
     private static HashMap<String, List<Transaction>> sales = new HashMap<>();
@@ -56,15 +62,23 @@ class TransactionStorage
 
     static List<Transaction> getAllTransactions(TransactionType type)
     {
-        List<Transaction> result = new LinkedList<>();
-        HashMap<String, List<Transaction>> target;
-        if (type == TransactionType.SALE) target = sales;
-        else target = purchases;
-        for (List<Transaction> l : target.values())
+        lock.readLock().lock();
+        try
         {
-            result.addAll(l);
+            List<Transaction> result = new LinkedList<>();
+            HashMap<String, List<Transaction>> target;
+            if (type == TransactionType.SALE) target = sales;
+            else target = purchases;
+            for (List<Transaction> l : target.values())
+            {
+                result.addAll(l);
+            }
+            return result;
         }
-        return result;
+        finally
+        {
+            lock.readLock().unlock();
+        }
     }
 
     static List<TransactionSuccess> process(Transaction trans)
@@ -149,7 +163,12 @@ class TransactionStorage
         lock.writeLock().lock();
         try
         {
-            if(!prices.containsKey(trans.item)) prices.put(trans.item, new PriceDescriptor());
+            if(!prices.containsKey(trans.item))
+            {
+                PriceDescriptor descriptor=new PriceDescriptor();
+                descriptor.lastPrice=trans.price;
+                prices.put(trans.item, descriptor);
+            }
             if (recurse && purchases.containsKey(trans.item))
             {
                 List<Transaction> purchasesList = purchases.get(trans.item);
@@ -201,7 +220,13 @@ class TransactionStorage
         lock.writeLock().lock();
         try
         {
-            if(!prices.containsKey(trans.item)) prices.put(trans.item, new PriceDescriptor());
+            if(!prices.containsKey(trans.item))
+            {
+                PriceDescriptor descriptor=new PriceDescriptor();
+                descriptor.lastPrice=trans.price;
+                prices.put(trans.item, descriptor);
+
+            }
             if (recurse && sales.containsKey(trans.item))
             {
                 List<Transaction> salesList = sales.get(trans.item);

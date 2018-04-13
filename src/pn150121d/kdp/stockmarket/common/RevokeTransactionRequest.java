@@ -1,6 +1,6 @@
 package pn150121d.kdp.stockmarket.common;
 
-public class RevokeTransactionRequest implements NetworkMessage
+public class RevokeTransactionRequest extends NetworkMessage
 {
     static final long serialVersionUID = 142304920394823094L;
     public final Transaction trans;

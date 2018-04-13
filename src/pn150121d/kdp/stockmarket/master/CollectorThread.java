@@ -70,6 +70,7 @@ class CollectorThread extends Thread
 
     private void collect(Slave slave)
     {
+        log("Collecting prices from "+slave.id);
         if(slave.getFailureCount()>=3) return;
         String response = slave.send(new GetPricesRequest(), true);
         if(response==null)
@@ -80,6 +81,7 @@ class CollectorThread extends Thread
         }
         else
         {
+            log(slave.id+" responded with prices");
             try
             {
                 List<Price> receivedPrices = Base64.objectFrom64(response);

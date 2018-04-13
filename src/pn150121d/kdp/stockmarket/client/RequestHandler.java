@@ -3,9 +3,14 @@ package pn150121d.kdp.stockmarket.client;
 import pn150121d.kdp.stockmarket.common.*;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
+    private final Set<Integer> handledMessages=new HashSet<>();
     @Override
     public void handleRequest(SocketWrapper request, Server server)
     {
@@ -29,6 +34,18 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             try
             {
                 NetworkMessage message = Base64.objectFrom64(request.read());
+                synchronized (handledMessages)
+                {
+                    if(handledMessages.contains(message.msgId))
+                    {
+                        request.write("ACK");
+                        return;
+                    }
+                    else
+                    {
+                        handledMessages.add(message.msgId);
+                    }
+                }
                 switch (message.getType())
                 {
                     case MessageTypes.ECHO:
@@ -42,7 +59,13 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                         break;
                     case MessageTypes.REVOKE_TRANSACTION_RESPONSE:
                         server.log(TransactionsAndPrices.handleRevoke((RevokeTransactionResponse) message));
+                        request.write("ACK");
                         server.notifyUpdate();
+                        break;
+                    case MessageTypes.GET_TRANSACTION_LIST_RESPONSE:
+                        TransactionsAndPrices.globalTransactions=((GetTransactionListResponse)message).transactionList;
+                        server.notifyUpdate();
+                        server.log("Got new list of transactions "+((GetTransactionListResponse)message).transactionList.size());
                         break;
                     case MessageTypes.ANNOUNCE_PRICES:
                         TransactionsAndPrices.prices=((PriceAnnounce)message).priceList;

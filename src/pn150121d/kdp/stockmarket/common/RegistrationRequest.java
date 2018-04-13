@@ -1,6 +1,6 @@
 package pn150121d.kdp.stockmarket.common;
 
-public class RegistrationRequest implements NetworkMessage
+public class RegistrationRequest extends NetworkMessage
 {
     static final long serialVersionUID = 1239812093812545L;
     public final int port;

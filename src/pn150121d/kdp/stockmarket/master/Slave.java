@@ -27,6 +27,15 @@ class Slave extends Correspondent
         }
         return result;
     }
+    synchronized String sendWithoutBacklog(NetworkMessage message)
+    {
+        String response=send(message);
+        if(response==null)
+        {
+            backlog.remove(message);
+        }
+        return response;
+    }
 
     int getFailureCount()
     {

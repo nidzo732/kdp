@@ -39,6 +39,9 @@ public class Main
             else
             {
                 server.setLogger(message -> System.out.println("MASTER LOG: " + message));
+                collectorThread.setLogger(message -> System.out.println("MASTER LOG: " + message));
+                announcerThread.setLogger(message -> System.out.println("MASTER LOG: " + message));
+
             }
             serverThread.start();
             collectorThread.start();

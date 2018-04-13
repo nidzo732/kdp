@@ -4,6 +4,7 @@ import pn150121d.kdp.stockmarket.common.*;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
@@ -43,6 +44,11 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                         break;
                     case MessageTypes.ECHO:
                         request.write("ECHO");
+                        break;
+                    case MessageTypes.GET_TRANSACTION_LIST:
+                        List<Transaction> transactions=TransactionStorage.getAllTransactions(TransactionType.SALE);
+                        transactions.addAll(TransactionStorage.getAllTransactions(TransactionType.PURCHASE));
+                        request.write(Base64.objectTo64(new GetTransactionListResponse(transactions)));
                         break;
                     default:
                         server.log("Got unknown request type: " + message);

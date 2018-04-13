@@ -2,7 +2,7 @@ package pn150121d.kdp.stockmarket.common;
 
 import java.util.List;
 
-public class PriceAnnounce implements NetworkMessage
+public class PriceAnnounce extends NetworkMessage
 {
     public final List<Price> priceList;
     public PriceAnnounce(List<Price> priceList)

@@ -2,7 +2,8 @@ package pn150121d.kdp.stockmarket.common;
 
 import java.io.Serializable;
 
-public interface NetworkMessage extends Serializable
+public abstract class NetworkMessage implements Serializable
 {
-    String getType();
+    public abstract String getType();
+    public Integer msgId;
 }

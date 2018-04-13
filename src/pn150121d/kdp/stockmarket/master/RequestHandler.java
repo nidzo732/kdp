@@ -3,6 +3,8 @@ package pn150121d.kdp.stockmarket.master;
 import pn150121d.kdp.stockmarket.common.*;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
@@ -71,6 +73,10 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                         break;
                     case MessageTypes.REVOKE_TRANSACTION:
                         revokeTransaction((RevokeTransactionRequest) message);
+                        break;
+                    case MessageTypes.GET_TRANSACTION_LIST:
+                        getTransactionList((GetTransactionListRequest)message);
+                        break;
                     case MessageTypes.ECHO:
                         respond("ECHO");
                         break;
@@ -80,7 +86,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
 
                 }
             }
-            catch (IOException | ClassNotFoundException | ClassCastException | IllegalArgumentException e)
+            catch (IOException | ClassNotFoundException | ClassCastException | IllegalArgumentException | InterruptedException e)
             {
                 server.log("Exception while handling request");
                 server.log(e.toString());
@@ -89,6 +95,63 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             finally
             {
                 if (request != null) request.close();
+            }
+        }
+
+        private void getTransactionList(GetTransactionListRequest message) throws InterruptedException
+        {
+            if (!Router.clients.containsKey(message.sender))
+            {
+                server.log("Got transaction from unknown client");
+                respond("REJECT");
+                return;
+            }
+            Client client = Router.clients.get(message.sender);
+            if (request != null)
+            {
+                if (!client.ip.equals(request.getIp()))
+                {
+                    server.log("Got transaction from fake client");
+                    request.write("REJECT");
+                    return;
+                }
+            }
+            request.write("OK");
+            Router.getReadLock();
+            try
+            {
+                List<Transaction> transactionList= Collections.synchronizedList(new LinkedList<>());
+                List<Slave> slaves=Router.getAllSlaves();
+                List<Thread> threads=new LinkedList<>();
+                for(Slave slave: slaves)
+                {
+                    Thread thread=new Thread(() -> {
+                        String response = slave.sendWithoutBacklog(message);
+                        if(response!=null)
+                        {
+                            try
+                            {
+                                GetTransactionListResponse rsp=Base64.objectFrom64(response);
+                                transactionList.addAll(rsp.transactionList);
+                            }
+                            catch (IOException | ClassNotFoundException e)
+                            {
+                                return;
+                            }
+                        }
+                    });
+                    thread.start();
+                    threads.add(thread);
+                }
+                for (Thread thread:threads)
+                {
+                    thread.join();
+                }
+                client.sendWithoutBacklog(new GetTransactionListResponse(new LinkedList<>(transactionList)));
+            }
+            finally
+            {
+                Router.releaseReadLock();
             }
         }
 

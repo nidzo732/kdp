@@ -1,6 +1,6 @@
 package pn150121d.kdp.stockmarket.common;
 
-public class Echo implements NetworkMessage
+public class Echo extends NetworkMessage
 {
     static final long serialVersionUID = 423948230984234L;
 

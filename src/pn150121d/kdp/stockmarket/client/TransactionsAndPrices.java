@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class TransactionsAndPrices
 {
     static HashMap<String, Transaction> transactions = new HashMap<>();
+    static List<Transaction> globalTransactions=null;
     static List<Price> prices = new LinkedList<>();
     private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
 

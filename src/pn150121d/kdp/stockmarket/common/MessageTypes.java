@@ -11,4 +11,6 @@ public class MessageTypes
     public static final String ECHO = "ECH";
     public static final String REGISTER_CLIENT = "REG";
     public static final String REGISTER_SLAVE = "RGS";
+    public static final String GET_TRANSACTION_LIST = "TLG";
+    public static final String GET_TRANSACTION_LIST_RESPONSE = "TLR";
 }

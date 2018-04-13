@@ -1,6 +1,6 @@
 package pn150121d.kdp.stockmarket.common;
 
-public class RevokeTransactionResponse implements NetworkMessage
+public class RevokeTransactionResponse extends NetworkMessage
 {
     public final String target;
     public final String status;

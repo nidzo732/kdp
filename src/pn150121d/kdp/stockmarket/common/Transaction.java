@@ -1,6 +1,6 @@
 package pn150121d.kdp.stockmarket.common;
 
-public class Transaction implements NetworkMessage
+public class Transaction extends NetworkMessage
 {
     static final long serialVersionUID = 9809284092841L;
     public final String sender;

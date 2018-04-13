@@ -18,6 +18,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     private Master master;
     private JFrame frame;
     private ScrollableTextList transactions;
+    private ScrollableTextList globalTransactions;
     private ScrollableTextList prices;
     private ScrollableTextList log;
     private JButton loginButton;
@@ -107,10 +108,14 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         topRow2.add(transactionButtons);
 
         topRow3 = new JPanel(new GridLayout(2, 3, 10, 0));
+        topRow3.add(new JLabel("Moje Transakcije"));
         topRow3.add(new JLabel("Transakcije"));
         topRow3.add(new JLabel("Cene"));
         topRow3.add(new JLabel("Log"));
         topRow3.add(new JLabel("ID:hartija:Tip:Cena:Broj"));
+        JButton refreshGlobalTransactions=new JButton("Osvezi");
+        refreshGlobalTransactions.addActionListener(this);
+        topRow3.add(refreshGlobalTransactions);
         topRow3.add(new JLabel("Hartija:cena"));
         topRow3.add(new JLabel(""));
         top.add(topRow1);
@@ -120,9 +125,11 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
 
         log = new ScrollableTextList();
         transactions = new ScrollableTextList();
+        globalTransactions=new ScrollableTextList();
         prices = new ScrollableTextList();
         JPanel mid = new JPanel(new GridLayout(1, 3, 10, 0));
         mid.add(transactions);
+        mid.add(globalTransactions);
         mid.add(prices);
         mid.add(log);
         this.add(mid, BorderLayout.CENTER);
@@ -153,6 +160,14 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         for(Price price:TransactionsAndPrices.prices)
         {
             prices.append(price.item+":"+price.price);
+        }
+        globalTransactions.clear();
+        if(TransactionsAndPrices.globalTransactions!=null)
+        {
+            for (Transaction t : TransactionsAndPrices.globalTransactions)
+            {
+                globalTransactions.append(t.id + ":"+t.item+":"+t.type + ":"+t.price+":"+ t.count);
+            }
         }
         TransactionsAndPrices.releaseReadLock();
         /*TransactionStorage.getReadLock();
@@ -324,6 +339,17 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         else if (e.getActionCommand().equals("Opozovi"))
         {
             revokeTransaction();
+        }
+        else if(e.getActionCommand().equals("Osvezi"))
+        {
+            try
+            {
+                master.sendMessage(new GetTransactionListRequest(master.username));
+            }
+            catch (IOException err)
+            {
+                logMessage(err.getMessage());
+            }
         }
     }
 }
