@@ -5,6 +5,9 @@ import pn150121d.kdp.stockmarket.common.SocketWrapper;
 import javax.swing.*;
 import java.io.IOException;
 
+/**
+ *  Main klasa za klijentski program, startuje grafički interfejs
+ */
 public class Main
 {
     public static void main(String[] args) throws IOException, ClassNotFoundException

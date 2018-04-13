@@ -1,5 +1,8 @@
 package pn150121d.kdp.stockmarket.common;
 
+/**
+ * Tipovi poruka koji se šalju preko mreže
+ */
 public class MessageTypes
 {
     public static final String PROCESS_TRANSACTION = "TRN";

@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Klasa koja obrađuje poruke koje klijent primi preko mreže
+ */
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
     private final Set<Integer> handledMessages=new HashSet<>();

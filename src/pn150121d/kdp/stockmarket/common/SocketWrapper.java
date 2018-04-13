@@ -7,6 +7,10 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+/**
+ * Klasa koja wrapuje javine sockete i prosleđuje
+ * stringove kroz njih
+ */
 public class SocketWrapper
 {
     public static int TIMEOUT = 2000;

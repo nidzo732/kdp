@@ -2,6 +2,9 @@ package pn150121d.kdp.stockmarket.common;
 
 import java.io.Serializable;
 
+/**
+ * Klasa koja predstavlja cenu jedne hartije
+ */
 public class Price implements Serializable
 {
     static final long serialVersionUID = 34589340958340958L;

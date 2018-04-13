@@ -7,19 +7,29 @@ import pn150121d.kdp.stockmarket.common.SocketWrapper;
 
 import java.io.IOException;
 
+/**
+ * Klasa koja predstavlja vezu sa glavnim serverom
+ */
 class Master
 {
     final String username;
     public final int port;
-    // private final String password;
     private final String ip;
 
+    /**
+     *
+     * @param ip adresa glavnog servera
+     * @param port port na kojem slusa glavni server
+     * @param myPort port na kojem klijent sluša
+     * @param username korisnično ime
+     * @param password lozinka
+     * @throws IOException u slučaju mrežne greške
+     */
     Master(String ip, int port, int myPort, String username, String password) throws IOException
     {
         this.ip = ip;
         this.port = port;
         this.username = username;
-        // this.password = password;
         SocketWrapper sock = null;
         try
         {
@@ -34,6 +44,12 @@ class Master
         }
     }
 
+    /**
+     * Šalje poruku glavnom serveru
+     * @param message poruka
+     * @return odgvor glavnog servera
+     * @throws IOException u slučaju problema na mreži
+     */
     String sendMessage(NetworkMessage message) throws IOException
     {
         SocketWrapper sock = null;

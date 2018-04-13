@@ -2,6 +2,9 @@ package pn150121d.kdp.stockmarket.common;
 
 import java.util.List;
 
+/**
+ * Poruka kojom se šalje lista aktivnih ponuda
+ */
 public class GetTransactionListResponse extends NetworkMessage
 {
     public final List<Transaction> transactionList;

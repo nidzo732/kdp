@@ -6,6 +6,10 @@ import pn150121d.kdp.stockmarket.common.Server;
 import javax.swing.*;
 import java.io.IOException;
 
+/**
+ * Ulazna klasa za glavni server. Otvara serverski socket i eventualno
+ * pokreće GUI
+ */
 public class Main
 {
     public static void main(String[] args) throws IOException, InterruptedException

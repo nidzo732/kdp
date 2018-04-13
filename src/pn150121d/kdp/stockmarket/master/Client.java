@@ -5,6 +5,9 @@ import pn150121d.kdp.stockmarket.common.NetworkMessage;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Klasa koja predstavlja jednog povezanog klijenta
+ */
 class Client extends Correspondent
 {
     final String name;
@@ -16,6 +19,11 @@ class Client extends Correspondent
         this.name = name;
     }
 
+    /**
+     * Šalje poruku, u slučaju mrežne greške stavlja poruku u backlog i vraća null
+     * @param message poruka
+     * @return odgovor
+     */
     @Override
     synchronized String send(NetworkMessage message)
     {
@@ -54,6 +62,11 @@ class Client extends Correspondent
         return response;
     }
 
+    /**
+     * Šalje poruku, ali bez ubacivanja u backlog
+     * @param message poruka
+     * @return ogovor, null u slučaju greške
+     */
     synchronized String sendWithoutBacklog(NetworkMessage message)
     {
         String response=send(message);

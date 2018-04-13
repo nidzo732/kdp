@@ -3,6 +3,9 @@ package pn150121d.kdp.stockmarket.master;
 import pn150121d.kdp.stockmarket.common.*;
 import java.util.*;
 
+/**
+ * Nit koja periodično klijentima šalje informaicije o cenama
+ */
 class AnnouncerThread extends Thread
 {
     private boolean running=true;

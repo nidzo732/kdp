@@ -4,22 +4,35 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
 
+/**
+ * Klasa koja oslškuje na zadatom portu, prima poruke
+ * i prosleđuje ih zadatom RequestHandler-u na obradu
+ */
 public class Server implements Runnable
 {
     private ServerSocket listener;
-    private int listenPort;
     private Logger logger = null;
     private UpdateListener updateListener = null;
     private RequestHandler handler;
     private boolean terminated = false;
 
+    /**
+     *
+     * @param listenPort port na kojem se očekuju konekciju
+     * @param handler klasa koja obrađuje poruke
+     * @throws IOException u slučaju neuspešnog otvaranja serverskog socketa
+     */
     public Server(int listenPort, RequestHandler handler) throws IOException
     {
-        this.listenPort = listenPort;
         this.handler = handler;
         listener = new ServerSocket(listenPort);
     }
 
+    /**
+     * Ponovo obrađuje zahteve iz backlogova - koristi se na glavnom serveru
+     * za backlogovane zahteve sa mrtvih podservera
+     * @param requests zahtevi
+     */
     public void handleDelayedRequests(List<NetworkMessage> requests)
     {
         handler.handleDelayedRequests(requests, this);

@@ -6,6 +6,9 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Thread-safe skladište za informacije o ponudama i za uparivanje ponuda
+ */
 class TransactionStorage
 {
     private static class PriceDescriptor
@@ -87,8 +90,15 @@ class TransactionStorage
         {
             if(handledTransactionsLocks.containsKey(trans.id))
             {
-                handledTransactionsLocks.get(trans.id).readLock().lock();
-                return handledTransactions.get(trans.id);
+                try
+                {
+                    handledTransactionsLocks.get(trans.id).readLock().lock();
+                    return handledTransactions.get(trans.id);
+                }
+                finally
+                {
+                    handledTransactionsLocks.get(trans.id).readLock().unlock();
+                }
             }
             else
             {

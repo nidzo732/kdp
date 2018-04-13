@@ -7,6 +7,9 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+/**
+ * GUI za podserver. Prikazuje status i logove
+ */
 class UI extends JPanel implements Logger, UpdateListener
 {
     private static final int WINDOW_WIDTH = 1200;

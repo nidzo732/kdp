@@ -10,6 +10,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 
+/**
+ * Grafički interfejs klijenta
+ */
 public class UI extends JPanel implements Logger, UpdateListener, ActionListener
 {
     private static final int WINDOW_WIDTH = 900;
@@ -170,23 +173,6 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             }
         }
         TransactionsAndPrices.releaseReadLock();
-        /*TransactionStorage.getReadLock();
-        sales.setText("");
-        for(Transaction t:TransactionStorage.getAllTransactions(TransactionType.SALE))
-        {
-            sales.append(t.toShortString()+SEPARATOR);
-        }
-        purchases.setText("");
-        for(Transaction t:TransactionStorage.getAllTransactions(TransactionType.PURCHASE))
-        {
-            purchases.append(t.toShortString()+SEPARATOR);
-        }
-        prices.setText("");
-        for(Price price:TransactionStorage.getPrices())
-        {
-            prices.append(price.item+":"+price.price+SEPARATOR);
-        }
-        TransactionStorage.releaseReadLock();*/
     }
 
     private void doLogin()

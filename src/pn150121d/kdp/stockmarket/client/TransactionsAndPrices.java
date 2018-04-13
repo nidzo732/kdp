@@ -8,7 +8,11 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class TransactionsAndPrices
+/**
+ * Statička klasa koja vodi lokalnu evidenciju o ponudama
+ * koje je poslao ovaj klijent i o cenama
+ */
+class TransactionsAndPrices
 {
     static HashMap<String, Transaction> transactions = new HashMap<>();
     static List<Transaction> globalTransactions=null;
@@ -25,6 +29,11 @@ public class TransactionsAndPrices
         lock.readLock().unlock();
     }
 
+
+    /**
+     * Dodaje novu transakciju u listu
+     * @param transaction transakcija
+     */
     static void addTransaction(Transaction transaction)
     {
         lock.writeLock().lock();
@@ -32,6 +41,10 @@ public class TransactionsAndPrices
         lock.writeLock().unlock();
     }
 
+    /**
+     * Ažurira postojeću transakciju na osnovu podataka o promeni
+     * @param success podaci o promeni
+     */
     static void handleSuccess(TransactionSuccess success)
     {
         lock.writeLock().lock();
@@ -42,6 +55,11 @@ public class TransactionsAndPrices
         lock.writeLock().unlock();
     }
 
+    /**
+     * Briše opozvanu transakciju iz liste, ako je opoziv uspešan
+     * @param response rezultat opoziva
+     * @return tekstualni opis rezultata - za prikaz na GUI-ju
+     */
     static String handleRevoke(RevokeTransactionResponse response)
     {
 

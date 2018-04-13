@@ -5,6 +5,10 @@ import pn150121d.kdp.stockmarket.common.*;
 import javax.swing.*;
 import java.io.IOException;
 
+/**
+ * Ulazna klasa za podserver. Otvara serverski socket i pokušava da se
+ * poveže na glavni server. Eventualno startuje GUI
+ */
 public class Main
 {
     public static void main(String[] args) throws InterruptedException, IOException

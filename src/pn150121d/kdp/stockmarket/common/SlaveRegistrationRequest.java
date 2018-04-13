@@ -1,5 +1,8 @@
 package pn150121d.kdp.stockmarket.common;
 
+/**
+ * Zahtev koji podserveri šalju glavnom kad se pokrenu
+ */
 public class SlaveRegistrationRequest extends NetworkMessage
 {
     static final long serialVersionUID = 599654609849608L;

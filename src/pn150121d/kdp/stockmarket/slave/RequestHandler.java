@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * RequestHandler za podserver
+ */
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
     @Override

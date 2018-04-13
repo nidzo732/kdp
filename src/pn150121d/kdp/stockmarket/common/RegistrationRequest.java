@@ -1,5 +1,8 @@
 package pn150121d.kdp.stockmarket.common;
 
+/**
+ * Poruka koju klijent šalje serveru kad želi da se prijavi
+ */
 public class RegistrationRequest extends NetworkMessage
 {
     static final long serialVersionUID = 1239812093812545L;

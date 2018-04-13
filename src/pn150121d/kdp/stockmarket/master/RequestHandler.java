@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * RequestHandler za glavni server
+ */
 public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestHandler
 {
     private static int nextTransId = 0;

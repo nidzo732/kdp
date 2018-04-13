@@ -8,15 +8,19 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Thread-safe klasa za vođenje evidencije o povezanim klijentima i podserverima,
+ * prosleđuje poruke na osnovu tabele rutiranja, obrađuje mrtve podservere
+ */
 class Router
 {
-    static ReadWriteLock lock = new ReentrantReadWriteLock(true);
-    static HashMap<String, Client> clients = new HashMap<>();
-    static HashMap<Integer, Slave> slaves = new HashMap<>();
-    static Iterator<Slave> slavesIterator = null;
-    static HashMap<String, Integer> slaveTransMap = new HashMap<>();
+    private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
+    static Map<String, Client> clients = Collections.synchronizedMap(new HashMap<>());
+    static Map<Integer, Slave> slaves = Collections.synchronizedMap(new HashMap<>());
+    private static Iterator<Slave> slavesIterator = null;
+    static Map<String, Integer> slaveTransMap = Collections.synchronizedMap(new HashMap<>());
     static Set<Slave> potentiallyDeadSlaves=Collections.synchronizedSet(new HashSet<>());
-    static int slaveCount = 0;
+    private static int slaveCount = 0;
 
     static boolean registerClient(RegistrationRequest request, String fromIp)
     {

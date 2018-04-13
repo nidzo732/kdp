@@ -2,6 +2,10 @@ package pn150121d.kdp.stockmarket.master;
 
 import pn150121d.kdp.stockmarket.common.NetworkMessage;
 
+/**
+ * Klasa koja predstavlja jedan podserver.
+ * Prosleđuje mrežne poruke i vodi baclkog
+ */
 class Slave extends Correspondent
 {
     final int id;
@@ -13,6 +17,13 @@ class Slave extends Correspondent
         this.id = id;
     }
 
+    /**
+     * Šalje poruku
+     * @param message poruka
+     * @param supervised da li da se ubaci u backlog i inkrementira brojač
+     *                   neuspelih u slučaju mrežne greške
+     * @return odgovor ili null ako dođe do greške u mreži
+     */
     synchronized String send(NetworkMessage message, boolean supervised)
     {
         String result=super.send(message);
@@ -27,6 +38,12 @@ class Slave extends Correspondent
         }
         return result;
     }
+
+    /**
+     * Šalje poruku bez backlogovanja
+     * @param message poruka
+     * @return odgovor ili null ako dođe do mrežne greške
+     */
     synchronized String sendWithoutBacklog(NetworkMessage message)
     {
         String response=send(message);

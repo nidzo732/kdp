@@ -2,6 +2,9 @@ package pn150121d.kdp.stockmarket.common;
 
 import javax.swing.*;
 
+/**
+ * Grafička komponenta za prikaz logova na GUI-ju
+ */
 public class ScrollableTextList extends JScrollPane
 {
     private JList<String> list;

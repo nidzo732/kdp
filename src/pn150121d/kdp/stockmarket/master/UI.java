@@ -10,6 +10,9 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+/**
+ * GUI za glavni server, prikazuje logove i status
+ */
 class UI extends JPanel implements Logger, UpdateListener
 {
     private static final int WINDOW_WIDTH = 1200;

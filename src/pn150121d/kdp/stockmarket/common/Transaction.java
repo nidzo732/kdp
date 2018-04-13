@@ -1,5 +1,8 @@
 package pn150121d.kdp.stockmarket.common;
 
+/**
+ * Poruka koja opisuje ponudu
+ */
 public class Transaction extends NetworkMessage
 {
     static final long serialVersionUID = 9809284092841L;
@@ -11,6 +14,14 @@ public class Transaction extends NetworkMessage
     public int count;
     public String id;
 
+    /**
+     *
+     * @param sender klijent koji šalje ponudu
+     * @param type kupovina ili prodaja
+     * @param item hartija
+     * @param price cena
+     * @param count količina
+     */
     public Transaction(String sender, TransactionType type, String item, int price, int count)
     {
         this.sender = sender;

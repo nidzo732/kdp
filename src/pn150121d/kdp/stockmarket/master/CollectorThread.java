@@ -6,6 +6,10 @@ import pn150121d.kdp.stockmarket.common.Base64;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Nit koja periodično skuplja podatke o cenama sa podservera,
+ * i potencijalno izbacuje mrtve podservere iz Router-a
+ */
 class CollectorThread extends Thread
 {
     private Map<String, Integer> prices= Collections.synchronizedMap(new HashMap<>());
@@ -71,7 +75,12 @@ class CollectorThread extends Thread
     private void collect(Slave slave)
     {
         log("Collecting prices from "+slave.id);
-        if(slave.getFailureCount()>=3) return;
+        if(slave.getFailureCount()>=3)
+        {
+            log("Slave "+slave.id+" failed to respond "+slave.getFailureCount()+" times");
+            log("Slave "+slave.id+" is now considered dead");
+            return;
+        }
         String response = slave.send(new GetPricesRequest(), true);
         if(response==null)
         {

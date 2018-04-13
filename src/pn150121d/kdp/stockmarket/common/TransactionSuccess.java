@@ -1,5 +1,8 @@
 package pn150121d.kdp.stockmarket.common;
 
+/**
+ * Poruka koju vraća podserver kad uspe da upari neke dve ponude
+ */
 public class TransactionSuccess extends NetworkMessage
 {
     static final long serialVersionUID = 20492304924234L;

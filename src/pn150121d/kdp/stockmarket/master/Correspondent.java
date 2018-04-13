@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Zajednička nadlkasa za Client i Slave,
+ * prosleđuje poruke bez razmišljanja o backlog-u
+ */
 public class Correspondent
 {
     final String ip;

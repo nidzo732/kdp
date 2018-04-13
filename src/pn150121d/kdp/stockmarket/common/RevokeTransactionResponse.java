@@ -1,5 +1,8 @@
 package pn150121d.kdp.stockmarket.common;
 
+/**
+ * Status opoziva ponude
+ */
 public class RevokeTransactionResponse extends NetworkMessage
 {
     public final String target;
