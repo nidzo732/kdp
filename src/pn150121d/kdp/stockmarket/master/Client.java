@@ -11,12 +11,14 @@ import java.util.List;
 class Client extends Correspondent
 {
     final String name;
+    final String password;
     private int messagesSent=0;
 
-    Client(String ip, int port, String name)
+    Client(String ip, int port, String name, String password)
     {
         super(ip, port);
         this.name = name;
+        this.password=password;
     }
 
     /**
@@ -75,5 +77,10 @@ class Client extends Correspondent
             backlog.remove(message);
         }
         return response;
+    }
+
+    public synchronized void loadBacklog(Client oldClient)
+    {
+        this.backlog=new LinkedList<>(oldClient.backlog);
     }
 }

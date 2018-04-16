@@ -72,7 +72,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         topRow1 = new JPanel(new GridLayout(2, 5, 10, 0));
         topRow1.add(new JLabel("Ime"));
         topRow1.add(new JLabel("Lozinka"));
-        topRow1.add(new JLabel("Port"));
+        topRow1.add(new JLabel("Lokalni port"));
         topRow1.add(new JLabel("server"));
         topRow1.add(new JLabel(""));
         username = new JTextField();
@@ -145,13 +145,13 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     }
 
     @Override
-    public void logMessage(String message)
+    public synchronized void logMessage(String message)
     {
         log.append(message);
     }
 
     @Override
-    public void dataUpdated()
+    public synchronized void dataUpdated()
     {
         TransactionsAndPrices.getReadLock();
         transactions.clear();
@@ -207,7 +207,25 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
             }
             server = new Server(port, new RequestHandler());
             new Thread(server).start();
-            master = new Master(masterIp.getText(), Ports.MASTER_LISTEN_PORT, port, username, password);
+            int masterPort=Ports.MASTER_LISTEN_PORT;
+            String masterIP = masterIp.getText();
+            if(masterIP.contains(":"))
+            {
+                String ipText=masterIP.split(":")[0];
+                String masterPortText=masterIP.split(":")[1];
+                try
+                {
+                    masterPort=Integer.parseInt(masterPortText);
+                    if(masterPort<1025 || masterPort>=65535) throw new Exception();
+                    masterIP=ipText;
+                }
+                catch (Exception err)
+                {
+                    JOptionPane.showMessageDialog(null, "Port mora biti broj u opsegu [1025, 65535)");
+                    return;
+                }
+            }
+            master = new Master(masterIP, masterPort, port, username, password);
             logMessage("Prijava uspesna");
             loginButton.setVisible(false);
             topRow1.setVisible(false);
@@ -263,6 +281,11 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                 if (response.equals("NO_SLAVES"))
                 {
                     logMessage("Nema dostupnih podservera");
+                    return;
+                }
+                else if(response.equals("REJECT"))
+                {
+                    logMessage("Zahtev odbijen");
                     return;
                 }
                 trans.id = response;

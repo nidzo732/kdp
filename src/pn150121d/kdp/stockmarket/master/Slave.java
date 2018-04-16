@@ -8,10 +8,10 @@ import pn150121d.kdp.stockmarket.common.NetworkMessage;
  */
 class Slave extends Correspondent
 {
-    final int id;
+    final String id;
     private int failureCount=0;
 
-    Slave(String ip, int port, int id)
+    Slave(String ip, int port, String id)
     {
         super(ip, port);
         this.id = id;

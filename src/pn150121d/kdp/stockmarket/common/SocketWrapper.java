@@ -44,7 +44,7 @@ public class SocketWrapper
     public String read() throws IOException
     {
         String data = reader.readLine();
-        if (data == null) throw new IOException();
+        if (data == null) throw new IOException("Empty response from server");
         return data;
     }
 

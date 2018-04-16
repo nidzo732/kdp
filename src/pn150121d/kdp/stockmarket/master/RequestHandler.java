@@ -120,6 +120,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 }
             }
             request.write("OK");
+            server.log("Processing a get-transaction-list request from "+client.name);
             Router.getReadLock();
             try
             {
@@ -150,6 +151,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 {
                     thread.join();
                 }
+                server.log("Sending "+transactionList.size()+" transactions to "+client.name);
                 client.sendWithoutBacklog(new GetTransactionListResponse(new LinkedList<>(transactionList)));
             }
             finally
@@ -177,19 +179,25 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                 }
             }
             if(request!=null) trans.id = Integer.toString(getNextTransactionId());
-            String response = Router.routeMessageToSlave(trans, trans.item);
+            server.log("Processing transaction "+trans);
+            Slave slave=Router.getSlaveAndTakeReadLock(trans.item);
+            if(slave==null)
+            {
+                server.log("No slaves available to handle transaction");
+                respond("NO_SLAVES");
+                return;
+            }
+            else
+            {
+                respond(trans.id);
+            }
+            String response = slave.send(trans);
+            Router.releaseReadLock();
             if (response != null)
             {
-                if (response.equals("NO_SLAVES"))
-                {
-                    respond(response);
-                    return;
-                }
-                else
-                {
-                    respond(trans.id);
-                }
+                server.log("Transaction success "+trans);
                 List<TransactionSuccess> statuses = Base64.objectFrom64(response);
+                server.log("Transaction matched with "+statuses.size()+" other transactions");
                 if (statuses.size() > 0)
                 {
                     for (TransactionSuccess status : statuses)
@@ -202,8 +210,8 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             }
             else
             {
+                server.log("Slave failed to respond backlogging transaction with ID:"+trans.id);
                 server.notifyUpdate();
-                respond(trans.id);
             }
         }
 
@@ -211,13 +219,13 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
         {
             if (Router.registerClient(req, request.getIp()))
             {
-                server.log("Client registration accepted");
+                server.log("Client registration accepted from "+req.name+"("+request.getIp()+":"+req.port+")");
                 request.write("OK");
                 server.notifyUpdate();
             }
             else
             {
-                server.log("Client registration rejected");
+                server.log("Client registration rejected from "+req.name+"("+request.getIp()+":"+req.port+")");
                 request.write("FAIL");
                 server.notifyUpdate();
             }
@@ -227,13 +235,13 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
         {
             if (Router.registerSlave(reg, request.getIp()))
             {
-                server.log("Slave registration accepted");
+                server.log("Slave registration accepted from ("+request.getIp()+":"+reg.port +")");
                 request.write("OK");
                 server.notifyUpdate();
             }
             else
             {
-                server.log("Slave registration rejected");
+                server.log("Slave registration rejected from ("+request.getIp()+":"+reg.port+")");
                 request.write("FAIL");
                 server.notifyUpdate();
             }
@@ -256,13 +264,30 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                     return;
                 }
             }
-            respond("OK");
-            String response = Router.routeMessageToSlave(req, req.trans.item);
-            NetworkMessage responseObject = Base64.objectFrom64(response);
+            server.log("Revoking trasnaction "+req.trans);
+            Slave slave=Router.getSlaveAndTakeReadLock(req.trans.item);
+            if(slave==null)
+            {
+                server.log("No slaves available to handle transaction");
+                respond("NO_SLAVES");
+                return;
+            }
+            else
+            {
+                respond("OK");
+            }
+            String response = slave.send(req);
+            Router.releaseReadLock();
             if (response != null)
             {
+                NetworkMessage responseObject = Base64.objectFrom64(response);
+                server.log("Revoke status: "+response);
                 client.send(responseObject);
                 server.notifyUpdate();
+            }
+            else
+            {
+                server.log("Slave failed to respond, request backlogged");
             }
         }
 

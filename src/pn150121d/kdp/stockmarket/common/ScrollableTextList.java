@@ -15,12 +15,12 @@ public class ScrollableTextList extends JScrollPane
         setViewportView(list);
     }
 
-    public void clear()
+    public synchronized void clear()
     {
         ((DefaultListModel<String>) (list.getModel())).clear();
     }
 
-    public void append(String message)
+    public synchronized void append(String message)
     {
         ((DefaultListModel<String>) (list.getModel())).addElement(message);
         getVerticalScrollBar().setValue(getVerticalScrollBar().getMaximum());

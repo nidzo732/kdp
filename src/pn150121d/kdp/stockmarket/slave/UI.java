@@ -74,13 +74,13 @@ class UI extends JPanel implements Logger, UpdateListener
     }
 
     @Override
-    public void logMessage(String message)
+    public synchronized void logMessage(String message)
     {
         log.append(message);
     }
 
     @Override
-    public void dataUpdated()
+    public synchronized void dataUpdated()
     {
         TransactionStorage.getReadLock();
         sales.clear();

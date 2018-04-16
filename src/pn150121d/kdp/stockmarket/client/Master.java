@@ -36,7 +36,7 @@ class Master
             sock = new SocketWrapper(ip, port);
             sock.write(Base64.objectTo64(new RegistrationRequest(myPort, username, password)));
             String response = sock.read();
-            if (!response.equals("OK")) throw new IOException();
+            if (!response.equals("OK")) throw new IOException("Master responded with "+response);
         }
         finally
         {

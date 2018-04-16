@@ -16,26 +16,40 @@ class Router
 {
     private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
     static Map<String, Client> clients = Collections.synchronizedMap(new HashMap<>());
-    static Map<Integer, Slave> slaves = Collections.synchronizedMap(new HashMap<>());
+    static Map<String, Slave> slaves = Collections.synchronizedMap(new HashMap<>());
     private static Iterator<Slave> slavesIterator = null;
-    static Map<String, Integer> slaveTransMap = Collections.synchronizedMap(new HashMap<>());
+    static Map<String, String> slaveTransMap = Collections.synchronizedMap(new HashMap<>());
     static Set<Slave> potentiallyDeadSlaves=Collections.synchronizedSet(new HashSet<>());
-    private static int slaveCount = 0;
 
     static boolean registerClient(RegistrationRequest request, String fromIp)
     {
-        lock.readLock().lock();
+        lock.writeLock().lock();
+        Client oldClient=null;
         try
         {
             if (request.name == null || request.port <= 1024 || request.port >= 65535 || request.password == null)
                 return false;
-            clients.put(request.name, new Client(fromIp, request.port, request.name));
+            if(clients.containsKey(request.name))
+            {
+                oldClient=clients.get(request.name);
+                if(!oldClient.password.equals(request.password))
+                {
+                    return false;
+                }
+                else
+                {
+                    clients.remove(request.name);
+                }
+            }
+            Client newClient=new Client(fromIp, request.port, request.name, request.password);
+            if(oldClient!=null) newClient.loadBacklog(oldClient);
+            clients.put(request.name, newClient);
             return true;
 
         }
         finally
         {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -45,8 +59,7 @@ class Router
         try
         {
             if (request.port <= 1024 || request.port >= 65535) return false;
-            int newSlaveId = slaveCount++;
-            slaves.put(newSlaveId, new Slave(fromIp, request.port, newSlaveId));
+            slaves.put(fromIp+":"+request.port, new Slave(fromIp, request.port, fromIp+":"+request.port));
             slavesIterator = slaves.values().iterator();
             return true;
         }
@@ -56,12 +69,12 @@ class Router
         }
     }
 
-    private static int getTargetSlave(String itemId)
+    private static String getTargetSlave(String itemId)
     {
-        if (slaves.size() == 0) return -1;
+        if (slaves.size() == 0) return null;
         if (slaveTransMap.containsKey(itemId))
         {
-            int selectedSlave=slaveTransMap.get(itemId);
+            String selectedSlave=slaveTransMap.get(itemId);
             if(slaves.containsKey(selectedSlave))
             {
                 return selectedSlave;
@@ -81,22 +94,14 @@ class Router
         }
     }
 
-    static String routeMessageToSlave(NetworkMessage message, String itemId)
+    static Slave getSlaveAndTakeReadLock(String itemId)
     {
         lock.writeLock().lock();
-        int targetSlave = getTargetSlave(itemId);
+        String targetSlave = getTargetSlave(itemId);
         lock.readLock().lock();
         lock.writeLock().unlock();
-        try
-        {
-            if (targetSlave < 0) return "NO_SLAVES";
-            Slave slave = slaves.get(targetSlave);
-            return slave.send(message);
-        }
-        finally
-        {
-            lock.readLock().unlock();
-        }
+        if (targetSlave == null) return null;
+        return slaves.get(targetSlave);
     }
     static List<Client> getAllClients()
     {

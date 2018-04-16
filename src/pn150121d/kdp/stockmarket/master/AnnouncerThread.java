@@ -41,6 +41,7 @@ class AnnouncerThread extends Thread
                 {
                     priceList.add(new Price(item, prices.get(item)));
                 }
+                log("Announcing prices to clients");
                 for (Client client : clientList)
                 {
                     Thread announcer = new Thread(() -> announce(client, priceList));

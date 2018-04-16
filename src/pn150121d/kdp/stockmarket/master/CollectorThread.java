@@ -42,13 +42,16 @@ class CollectorThread extends Thread
                 if(iteration==0)
                 {
                     slaveList=Router.getAllSlaves();
+                    log("Collecting prices from all slaves");
                 }
                 else
                 {
+                    log("Collecting prices from potentially dead slaves");
                     slaveList=new LinkedList<>(Router.potentiallyDeadSlaves);
                     Router.potentiallyDeadSlaves.clear();
                 }
                 List<Thread> collectors = new LinkedList<>();
+
                 for (Slave slave : slaveList)
                 {
                     Thread collector = new Thread(() -> collect(slave));

@@ -79,7 +79,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
 
         private void handlePriceQuery(GetPricesRequest prices) throws IOException
         {
-            server.log("Handling price query");
+            server.log("Handling price query from master");
             request.write(Base64.objectTo64((Serializable) TransactionStorage.getPrices()));
             server.notifyUpdate();
         }

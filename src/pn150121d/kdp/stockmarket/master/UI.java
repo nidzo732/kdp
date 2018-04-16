@@ -87,7 +87,7 @@ class UI extends JPanel implements Logger, UpdateListener
     }
 
     @Override
-    public void logMessage(String message)
+    public synchronized void logMessage(String message)
     {
         log.append(message);
     }
@@ -109,7 +109,7 @@ class UI extends JPanel implements Logger, UpdateListener
         items.clear();
         for (String item : Router.slaveTransMap.keySet())
         {
-            items.append(item + ":" + Router.slaveTransMap.get(item)+":"+collectorThread.getPrice(item));
+            items.append(item + ":(" + Router.slaveTransMap.get(item)+"):"+collectorThread.getPrice(item));
         }
         Router.releaseReadLock();
     }
