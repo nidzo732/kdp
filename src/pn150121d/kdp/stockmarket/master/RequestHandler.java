@@ -178,11 +178,18 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                     return;
                 }
             }
+            if(trans.price<=0)
+            {
+                server.log("Got transaction with non-positive price");
+                respond("REJECT");
+                return;
+            }
             if(request!=null) trans.id = Integer.toString(getNextTransactionId());
             server.log("Processing transaction "+trans);
             Slave slave=Router.getSlaveAndTakeReadLock(trans.item);
             if(slave==null)
             {
+                Router.releaseReadLock();
                 server.log("No slaves available to handle transaction");
                 respond("NO_SLAVES");
                 return;
@@ -268,6 +275,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
             Slave slave=Router.getSlaveAndTakeReadLock(req.trans.item);
             if(slave==null)
             {
+                Router.releaseReadLock();
                 server.log("No slaves available to handle transaction");
                 respond("NO_SLAVES");
                 return;

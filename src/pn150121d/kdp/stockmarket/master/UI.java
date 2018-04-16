@@ -61,7 +61,7 @@ class UI extends JPanel implements Logger, UpdateListener
         top.add(new JLabel("Log"));
         top.add(new JLabel("naziv:ip:port"));
         top.add(new JLabel("ip:port"));
-        top.add(new JLabel("hartija:nadlezni podserver:cena"));
+        top.add(new JLabel("hartija:nadlezni podserver:cena:rast"));
         top.add(new JLabel(""));
         this.add(top, BorderLayout.NORTH);
 
@@ -89,28 +89,35 @@ class UI extends JPanel implements Logger, UpdateListener
     @Override
     public synchronized void logMessage(String message)
     {
-        log.append(message);
+        SwingUtilities.invokeLater(()-> log.append(message));
     }
 
     @Override
     public synchronized void dataUpdated()
     {
-        Router.getReadLock();
-        slaves.clear();
-        for (Slave slave : Router.slaves.values())
-        {
-            slaves.append(slave.ip + ":" + slave.port);
-        }
-        clients.clear();
-        for (Client client : Router.clients.values())
-        {
-            clients.append(client.name + ":" + client.ip + ":" + client.port);
-        }
-        items.clear();
-        for (String item : Router.slaveTransMap.keySet())
-        {
-            items.append(item + ":(" + Router.slaveTransMap.get(item)+"):"+collectorThread.getPrice(item));
-        }
-        Router.releaseReadLock();
+        SwingUtilities.invokeLater(()->{
+            Router.getReadLock();
+            slaves.clear();
+            for (Slave slave : Router.slaves.values())
+            {
+                slaves.append(slave.ip + ":" + slave.port);
+            }
+            clients.clear();
+            for (Client client : Router.clients.values())
+            {
+                clients.append(client.name + ":" + client.ip + ":" + client.port);
+            }
+            items.clear();
+            for (String item : Router.slaveTransMap.keySet())
+            {
+                String priceString="N/A";
+                if(collectorThread.getPrice(item)!=null)
+                {
+                    priceString=collectorThread.getPrice(item).price+":"+collectorThread.getPrice(item).growth*100+"%";
+                }
+                items.append(item + ":(" + Router.slaveTransMap.get(item)+"):"+priceString);
+            }
+            Router.releaseReadLock();
+        });
     }
 }

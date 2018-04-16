@@ -35,11 +35,11 @@ class AnnouncerThread extends Thread
 
                 List<Client> clientList=Router.getAllClients();
                 List<Thread> announcers=new LinkedList<>();
-                Map<String, Integer> prices = collector.getPrices();
+                Map<String, Price> prices = collector.getPrices();
                 List<Price> priceList=new ArrayList<>(prices.size());
                 for(String item:prices.keySet())
                 {
-                    priceList.add(new Price(item, prices.get(item)));
+                    priceList.add(new Price(item, prices.get(item).price, prices.get(item).growth));
                 }
                 log("Announcing prices to clients");
                 for (Client client : clientList)

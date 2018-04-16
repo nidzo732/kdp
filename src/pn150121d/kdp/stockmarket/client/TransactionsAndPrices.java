@@ -2,9 +2,7 @@ package pn150121d.kdp.stockmarket.client;
 
 import pn150121d.kdp.stockmarket.common.*;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -14,7 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 class TransactionsAndPrices
 {
-    static HashMap<String, Transaction> transactions = new HashMap<>();
+    static Map<String, Transaction> transactions = new HashMap<>();
     static List<Transaction> globalTransactions=null;
     static List<Price> prices = new LinkedList<>();
     private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
@@ -48,10 +46,13 @@ class TransactionsAndPrices
     static void handleSuccess(TransactionSuccess success)
     {
         lock.writeLock().lock();
-        if (!transactions.containsKey(success.transId)) return;
-        Transaction trans = transactions.get(success.transId);
+        HashMap<String, Transaction> newTransactions = new HashMap<>(transactions);
+
+        if (!newTransactions.containsKey(success.transId)) return;
+        Transaction trans = newTransactions.get(success.transId);
         trans.count -= success.count;
-        if (trans.count == 0) transactions.remove(success.transId);
+        if (trans.count == 0) newTransactions.remove(success.transId);
+        transactions=newTransactions;
         lock.writeLock().unlock();
     }
 

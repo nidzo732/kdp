@@ -76,28 +76,30 @@ class UI extends JPanel implements Logger, UpdateListener
     @Override
     public synchronized void logMessage(String message)
     {
-        log.append(message);
+        SwingUtilities.invokeLater(()-> log.append(message));
     }
 
     @Override
     public synchronized void dataUpdated()
     {
-        TransactionStorage.getReadLock();
-        sales.clear();
-        for (Transaction t : TransactionStorage.getAllTransactions(TransactionType.SALE))
-        {
-            sales.append(t.toShortString());
-        }
-        purchases.clear();
-        for (Transaction t : TransactionStorage.getAllTransactions(TransactionType.PURCHASE))
-        {
-            purchases.append(t.toShortString());
-        }
-        prices.clear();
-        for (Price price : TransactionStorage.getPrices())
-        {
-            prices.append(price.item + ":" + price.price);
-        }
-        TransactionStorage.releaseReadLock();
+        SwingUtilities.invokeLater(()->{
+            TransactionStorage.getReadLock();
+            sales.clear();
+            for (Transaction t : TransactionStorage.getAllTransactions(TransactionType.SALE))
+            {
+                sales.append(t.toShortString());
+            }
+            purchases.clear();
+            for (Transaction t : TransactionStorage.getAllTransactions(TransactionType.PURCHASE))
+            {
+                purchases.append(t.toShortString());
+            }
+            prices.clear();
+            for (Price price : TransactionStorage.getPrices(false))
+            {
+                prices.append(price.item + ":" + price.price);
+            }
+            TransactionStorage.releaseReadLock();
+        });
     }
 }

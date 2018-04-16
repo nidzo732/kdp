@@ -119,7 +119,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
         JButton refreshGlobalTransactions=new JButton("Osvezi");
         refreshGlobalTransactions.addActionListener(this);
         topRow3.add(refreshGlobalTransactions);
-        topRow3.add(new JLabel("Hartija:cena"));
+        topRow3.add(new JLabel("Hartija:cena:rast"));
         topRow3.add(new JLabel(""));
         top.add(topRow1);
         top.add(topRow2);
@@ -147,32 +147,34 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
     @Override
     public synchronized void logMessage(String message)
     {
-        log.append(message);
+        SwingUtilities.invokeLater(()-> log.append(message));
     }
 
     @Override
     public synchronized void dataUpdated()
     {
-        TransactionsAndPrices.getReadLock();
-        transactions.clear();
-        for (Transaction t : TransactionsAndPrices.transactions.values())
-        {
-            transactions.append(t.id + ":"+t.item+":"+t.type + ":"+t.price+":"+ t.count);
-        }
-        prices.clear();
-        for(Price price:TransactionsAndPrices.prices)
-        {
-            prices.append(price.item+":"+price.price);
-        }
-        globalTransactions.clear();
-        if(TransactionsAndPrices.globalTransactions!=null)
-        {
-            for (Transaction t : TransactionsAndPrices.globalTransactions)
+        SwingUtilities.invokeLater(()->{
+            TransactionsAndPrices.getReadLock();
+            transactions.clear();
+            for (Transaction t : TransactionsAndPrices.transactions.values())
             {
-                globalTransactions.append(t.id + ":"+t.item+":"+t.type + ":"+t.price+":"+ t.count);
+                transactions.append(t.id + ":"+t.item+":"+t.type + ":"+t.price+":"+ t.count);
             }
-        }
-        TransactionsAndPrices.releaseReadLock();
+            prices.clear();
+            for(Price price:TransactionsAndPrices.prices)
+            {
+                prices.append(price.item+":"+price.price+":"+price.growth*100+"%");
+            }
+            globalTransactions.clear();
+            if(TransactionsAndPrices.globalTransactions!=null)
+            {
+                for (Transaction t : TransactionsAndPrices.globalTransactions)
+                {
+                    globalTransactions.append(t.id + ":"+t.item+":"+t.type + ":"+t.price+":"+ t.count);
+                }
+            }
+            TransactionsAndPrices.releaseReadLock();
+        });
     }
 
     private void doLogin()

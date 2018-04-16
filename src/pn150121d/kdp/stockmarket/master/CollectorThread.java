@@ -12,7 +12,7 @@ import java.util.*;
  */
 class CollectorThread extends Thread
 {
-    private Map<String, Integer> prices= Collections.synchronizedMap(new HashMap<>());
+    private Map<String, Price> prices= Collections.synchronizedMap(new HashMap<>());
     private boolean running=true;
     private int iteration=0;
     private UpdateListener updateListener;
@@ -99,7 +99,7 @@ class CollectorThread extends Thread
                 List<Price> receivedPrices = Base64.objectFrom64(response);
                 for(Price price:receivedPrices)
                 {
-                    prices.put(price.item, price.price);
+                    prices.put(price.item, price);
                 }
             }
             catch (IOException | ClassNotFoundException | ClassCastException ignored)
@@ -107,7 +107,7 @@ class CollectorThread extends Thread
             }
         }
     }
-    Integer getPrice(String item)
+    Price getPrice(String item)
     {
         return prices.getOrDefault(item, null);
     }
@@ -125,7 +125,7 @@ class CollectorThread extends Thread
     {
         if(logger!=null) logger.logMessage(message);
     }
-    Map<String, Integer> getPrices()
+    Map<String, Price> getPrices()
     {
         return new HashMap<>(prices);
     }

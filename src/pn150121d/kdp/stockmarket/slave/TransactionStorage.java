@@ -15,17 +15,34 @@ class TransactionStorage
     {
         private PriceDescriptor()
         {
-            lastTransaction=-1;
-            lastPrice=-1;
+            reset();
+            previousIteration=-1;
         }
-        int lastTransaction;
-        int lastPrice;
-
-        @Override
-        public String toString()
+        private void reset()
         {
-            return "{lT:"+lastTransaction+", lP:"+lastPrice+"}";
+            previousIteration=getValue();
+            lastTransaction=-1;
+            lastSaleOffer=Integer.MAX_VALUE;
+            lastPurchaseOffer=-1;
         }
+        private int getValue()
+        {
+            if(lastTransaction!=-1) return lastTransaction;
+            else if(lastSaleOffer!=Integer.MAX_VALUE) return lastSaleOffer;
+            else if(lastPurchaseOffer!=-1) return lastPurchaseOffer;
+            else return previousIteration;
+        }
+        private float getGrowth()
+        {
+            if(previousIteration==-1) return 0;
+            int current=getValue();
+            return ((float)current)/((float)previousIteration)-1;
+
+        }
+        int lastSaleOffer;
+        int lastPurchaseOffer;
+        int lastTransaction;
+        int previousIteration;
     }
     private static ReadWriteLock lock = new ReentrantReadWriteLock(true);
     private static HashMap<String, List<Transaction>> sales = new HashMap<>();
@@ -45,7 +62,7 @@ class TransactionStorage
     }
 
 
-    static List<Price> getPrices()
+    static List<Price> getPrices(boolean doReset)
     {
         lock.readLock().lock();
         try
@@ -53,7 +70,9 @@ class TransactionStorage
             List<Price> result = new LinkedList<>();
             for (String item : prices.keySet())
             {
-                result.add(new Price(item, getPrice(item)));
+                PriceDescriptor descriptor=prices.get(item);
+                result.add(new Price(item, descriptor.getValue(), descriptor.getGrowth()));
+                if(doReset) descriptor.reset();
             }
             return result;
         }
@@ -86,6 +105,7 @@ class TransactionStorage
 
     static List<TransactionSuccess> process(Transaction trans)
     {
+        if(trans.price<=0) return new LinkedList<>();
         synchronized (handledTransactionsLocks)
         {
             if(handledTransactionsLocks.containsKey(trans.id))
@@ -173,12 +193,6 @@ class TransactionStorage
         lock.writeLock().lock();
         try
         {
-            if(!prices.containsKey(trans.item))
-            {
-                PriceDescriptor descriptor=new PriceDescriptor();
-                descriptor.lastPrice=trans.price;
-                prices.put(trans.item, descriptor);
-            }
             if (recurse && purchases.containsKey(trans.item))
             {
                 List<Transaction> purchasesList = purchases.get(trans.item);
@@ -205,10 +219,12 @@ class TransactionStorage
                 }
                 if (response.count > 0) successes.add(response);
                 if (trans.count > 0) sell(trans, false);
+                if(successes.size()==0) updatePriceFromOffer(trans.item, trans.price, trans.type);
                 return successes;
             }
             else
             {
+                if(recurse) updatePriceFromOffer(trans.item, trans.price, trans.type);
                 trans.timeStamp = (new Date()).getTime();
                 if (!sales.containsKey(trans.item))
                 {
@@ -230,13 +246,6 @@ class TransactionStorage
         lock.writeLock().lock();
         try
         {
-            if(!prices.containsKey(trans.item))
-            {
-                PriceDescriptor descriptor=new PriceDescriptor();
-                descriptor.lastPrice=trans.price;
-                prices.put(trans.item, descriptor);
-
-            }
             if (recurse && sales.containsKey(trans.item))
             {
                 List<Transaction> salesList = sales.get(trans.item);
@@ -263,10 +272,12 @@ class TransactionStorage
                 }
                 if (response.count > 0) successes.add(response);
                 if (trans.count > 0) purchase(trans, false);
+                if(successes.size()==0) updatePriceFromOffer(trans.item, trans.price, trans.type);
                 return successes;
             }
             else
             {
+                if(recurse) updatePriceFromOffer(trans.item, trans.price, trans.type);
                 trans.timeStamp = (new Date()).getTime();
                 if (!purchases.containsKey(trans.item))
                 {
@@ -282,6 +293,27 @@ class TransactionStorage
             lock.writeLock().unlock();
         }
     }
+    private static void updatePriceFromOffer(String item, int price, TransactionType type)
+    {
+        PriceDescriptor descriptor;
+        if(prices.containsKey(item))
+        {
+            descriptor=prices.get(item);
+        }
+        else
+        {
+            descriptor=new PriceDescriptor();
+            prices.put(item, descriptor);
+        }
+        if(type==TransactionType.SALE)
+        {
+            if(price<descriptor.lastSaleOffer) descriptor.lastSaleOffer=price;
+        }
+        else
+        {
+            if(price>descriptor.lastPurchaseOffer) descriptor.lastPurchaseOffer=price;
+        }
+    }
     private static void updatePriceFromTransaction(String item, int price)
     {
         PriceDescriptor descriptor;
@@ -295,29 +327,5 @@ class TransactionStorage
             prices.put(item, descriptor);
         }
         descriptor.lastTransaction=price;
-        descriptor.lastPrice=price;
-    }
-    private static Integer getPrice(String item)
-    {
-        PriceDescriptor descriptor=prices.getOrDefault(item, null);
-        if(descriptor!=null && descriptor.lastTransaction>=0)
-        {
-            int price=descriptor.lastTransaction;
-            descriptor.lastTransaction=-1;
-            return price;
-        }
-        else if(sales.containsKey(item) && sales.get(item).size()>0)
-        {
-            return sales.get(item).get(0).price;
-        }
-        else if(purchases.containsKey(item) && purchases.get(item).size()>0)
-        {
-            return purchases.get(item).get(0).price;
-        }
-        else if(descriptor!=null && descriptor.lastPrice>=0)
-        {
-            return descriptor.lastPrice;
-        }
-        return null;
     }
 }

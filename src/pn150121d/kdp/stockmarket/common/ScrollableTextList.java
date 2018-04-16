@@ -8,21 +8,25 @@ import javax.swing.*;
 public class ScrollableTextList extends JScrollPane
 {
     private JList<String> list;
+    private DefaultListModel<String> model;
 
     public ScrollableTextList()
     {
-        list = new JList<>(new DefaultListModel<>());
+        model=new DefaultListModel<>();
+        list = new JList<>(model);
         setViewportView(list);
     }
 
     public synchronized void clear()
     {
-        ((DefaultListModel<String>) (list.getModel())).clear();
+        model.clear();
+        repaint();
     }
 
     public synchronized void append(String message)
     {
-        ((DefaultListModel<String>) (list.getModel())).addElement(message);
+        model.addElement(message);
         getVerticalScrollBar().setValue(getVerticalScrollBar().getMaximum());
+        repaint();
     }
 }
