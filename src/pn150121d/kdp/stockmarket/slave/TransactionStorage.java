@@ -126,19 +126,25 @@ class TransactionStorage
                 handledTransactionsLocks.get(trans.id).writeLock().lock();
             }
         }
-        List<TransactionSuccess> result=null;
-        switch (trans.type)
+        List<TransactionSuccess> result = null;
+        try
         {
-            case SALE:
-                result = sell(trans, true);
-                break;
-            case PURCHASE:
-                result = purchase(trans, true);
-                break;
+            switch (trans.type)
+            {
+                case SALE:
+                    result = sell(trans, true);
+                    break;
+                case PURCHASE:
+                    result = purchase(trans, true);
+                    break;
+            }
+            handledTransactions.put(trans.id, result);
+            return result;
         }
-        handledTransactions.put(trans.id, result);
-        handledTransactionsLocks.get(trans.id).writeLock().unlock();
-        return result;
+        finally
+        {
+            handledTransactionsLocks.get(trans.id).writeLock().unlock();
+        }
     }
 
     static RevokeTransactionResponse revoke(Transaction trans)
@@ -268,7 +274,7 @@ class TransactionStorage
                         response.count += trans.count;
                         trans.count = 0;
                     }
-                    updatePriceFromTransaction(trans.item, trans.price);
+                    updatePriceFromTransaction(trans.item, offer.price);
                 }
                 if (response.count > 0) successes.add(response);
                 if (trans.count > 0) purchase(trans, false);
