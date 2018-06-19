@@ -2,7 +2,6 @@ package pn150121d.kdp.stockmarket.common;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -24,7 +23,7 @@ public class SocketWrapper
         socket = new Socket();
         socket.setSoTimeout(TIMEOUT);
         socket.connect(new InetSocketAddress(ip, port), TIMEOUT);
-        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        reader = new BufferedReader(new LimitedStreamReader(socket.getInputStream()));
         writer = new PrintWriter(socket.getOutputStream(), true);
     }
 
@@ -32,7 +31,7 @@ public class SocketWrapper
     {
         this.socket = socket;
         this.socket.setSoTimeout(TIMEOUT);
-        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        reader = new BufferedReader(new LimitedStreamReader(socket.getInputStream()));
         writer = new PrintWriter(socket.getOutputStream(), true);
     }
 

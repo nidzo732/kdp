@@ -17,25 +17,31 @@ class Slave extends Correspondent
         this.id = id;
     }
 
+    @Override
+    synchronized String send(NetworkMessage message)
+    {
+        if(backlog.size()>0)
+        {
+            backlog.add(message);
+            return null;
+        }
+        return super.send(message);
+    }
+
     /**
-     * Šalje poruku
+     * Šalje  uz eventualno backlogovanje
      * @param message poruka
-     * @param supervised da li da se ubaci u backlog i inkrementira brojač
-     *                   neuspelih u slučaju mrežne greške
      * @return odgovor ili null ako dođe do greške u mreži
      */
-    synchronized String send(NetworkMessage message, boolean supervised)
+    synchronized String sendFromCollector(NetworkMessage message)
     {
-        String result=super.send(message);
-        if(supervised)
+        String result=super.sendMessage(message);
+        if (result == null)
         {
-            if (result == null)
-            {
-                backlog.remove(message);
-                failureCount++;
-            }
-            else failureCount = 0;
+            backlog.remove(message);
+            failureCount++;
         }
+        else failureCount = 0;
         return result;
     }
 

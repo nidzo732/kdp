@@ -14,7 +14,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
     @Override
     public void handleRequest(SocketWrapper request, Server server)
     {
-        new Thread(new Handler(request, server)).start();
+        server.execute(new Handler(request, server));
     }
 
     private static class Handler implements Runnable

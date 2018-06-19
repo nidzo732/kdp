@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Zajednička nadlkasa za Client i Slave,
- * prosleđuje poruke bez razmišljanja o backlog-u
+ * prosleđuje poruke i eventualno backloguje
  */
 public class Correspondent
 {
@@ -25,7 +25,6 @@ public class Correspondent
         this.port = port;
         backlog = new LinkedList<>();
     }
-
     synchronized String send(NetworkMessage message)
     {
         String response = sendMessage(message);
@@ -36,7 +35,7 @@ public class Correspondent
         return response;
     }
 
-    private String sendMessage(NetworkMessage message)
+    protected final String sendMessage(NetworkMessage message)
     {
         SocketWrapper sock = null;
         try

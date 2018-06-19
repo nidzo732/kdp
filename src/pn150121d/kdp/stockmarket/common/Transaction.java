@@ -47,4 +47,9 @@ public class Transaction extends NetworkMessage
     {
         return MessageTypes.PROCESS_TRANSACTION;
     }
+
+    public boolean valid()
+    {
+        return price>0 && count>0;
+    }
 }

@@ -3,6 +3,9 @@ package pn150121d.kdp.stockmarket.common;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Klasa koja oslškuje na zadatom portu, prima poruke
@@ -10,11 +13,13 @@ import java.util.List;
  */
 public class Server implements Runnable
 {
+    private static final int MAX_EXECUTOR_THREADS = 200;
     private ServerSocket listener;
     private Logger logger = null;
     private UpdateListener updateListener = null;
     private RequestHandler handler;
     private boolean terminated = false;
+    private final ExecutorService executor;
 
     /**
      *
@@ -26,6 +31,7 @@ public class Server implements Runnable
     {
         this.handler = handler;
         listener = new ServerSocket(listenPort);
+        this.executor= Executors.newFixedThreadPool(MAX_EXECUTOR_THREADS);
     }
 
     /**
@@ -99,9 +105,14 @@ public class Server implements Runnable
         try
         {
             listener.close();
+            executor.shutdown();
         }
         catch (IOException ignored)
         {
         }
+    }
+    public void execute(Runnable target)
+    {
+        executor.execute(target);
     }
 }

@@ -84,7 +84,7 @@ class CollectorThread extends Thread
             log("Slave "+slave.id+" is now considered dead");
             return;
         }
-        String response = slave.send(new GetPricesRequest(), true);
+        String response = slave.sendFromCollector(new GetPricesRequest());
         if(response==null)
         {
             Router.potentiallyDeadSlaves.add(slave);

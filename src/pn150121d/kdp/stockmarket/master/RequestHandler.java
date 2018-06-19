@@ -22,7 +22,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
     @Override
     public void handleRequest(SocketWrapper request, Server server)
     {
-        new Thread(new Handler(request, server)).start();
+        server.execute(new Handler(request, server));
     }
 
     @Override
@@ -30,7 +30,7 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
     {
         for(NetworkMessage request:requests)
         {
-            new Thread(new Handler(request, server)).start();
+            server.execute(new Handler(request, server));
         }
     }
 
@@ -178,9 +178,9 @@ public class RequestHandler implements pn150121d.kdp.stockmarket.common.RequestH
                     return;
                 }
             }
-            if(trans.price<=0)
+            if(!trans.valid())
             {
-                server.log("Got transaction with non-positive price");
+                server.log("Got invalid transaction");
                 respond("REJECT");
                 return;
             }

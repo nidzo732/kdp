@@ -105,7 +105,7 @@ class TransactionStorage
 
     static List<TransactionSuccess> process(Transaction trans)
     {
-        if(trans.price<=0) return new LinkedList<>();
+        if(!trans.valid()) return new LinkedList<>();
         synchronized (handledTransactionsLocks)
         {
             if(handledTransactionsLocks.containsKey(trans.id))

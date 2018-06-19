@@ -218,7 +218,7 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                 try
                 {
                     masterPort=Integer.parseInt(masterPortText);
-                    if(masterPort<1025 || masterPort>=65535) throw new Exception();
+                    /*if(masterPort<1025 || masterPort>=65535) throw new Exception();*/
                     masterIP=ipText;
                 }
                 catch (Exception err)
@@ -262,6 +262,11 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                     JOptionPane.showMessageDialog(null, "Unesite naziv hartije");
                     return;
                 }
+                if(item.length()>20)
+                {
+                    JOptionPane.showMessageDialog(null, "Naziv hartije može imati najviše 20 karaktera");
+                    return;
+                }
                 price = Integer.parseInt(this.price.getText());
                 count = Integer.parseInt(this.count.getText());
                 if (price <= 0 || count <= 0)
@@ -288,6 +293,11 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                 else if(response.equals("REJECT"))
                 {
                     logMessage("Zahtev odbijen");
+                    return;
+                }
+                else if(!response.matches("^[0-9]+$"))
+                {
+                    logMessage("Invalid response: "+response);
                     return;
                 }
                 trans.id = response;
@@ -323,7 +333,12 @@ public class UI extends JPanel implements Logger, UpdateListener, ActionListener
                 logMessage("Ne postoji izabrana transakcija");
                 return;
             }
-            master.sendMessage(new RevokeTransactionRequest(trans));
+            String response = master.sendMessage(new RevokeTransactionRequest(trans));
+            if(!response.equals("OK"))
+            {
+                logMessage("Invalid response: "+response);
+                return;
+            }
             logMessage("Zahtev za opoziv poslat");
         }
         catch (IOException err)
